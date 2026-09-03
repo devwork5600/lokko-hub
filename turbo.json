@@ -15,6 +15,12 @@
     "lint": {
       "dependsOn": ["^lint"]
     },
+    "@lokko-hub/db#build": {
+      // prisma generate writes the client into the root node_modules/@prisma/client,
+      // outside this task's declared "dist/**" outputs. A cache hit here would skip
+      // regenerating it, leaving a stale/ungenerated client behind. Always run fresh.
+      "cache": false
+    },
     "test": {
       "dependsOn": ["^build"],
       "env": [
