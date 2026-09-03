@@ -6,6 +6,7 @@ import { getListings } from '@/actions/listing-actions';
 import { LeafletMap } from '@/components/LeafletMapClient';
 
 import { GeoSearch } from './GeoSearch';
+import { SaveSearchButton } from './SaveSearchButton';
 
 export default async function ListingsPage({
   searchParams,
@@ -34,6 +35,10 @@ export default async function ListingsPage({
 
       <Suspense fallback={null}>
         <GeoSearch />
+      </Suspense>
+
+      <Suspense fallback={null}>
+        <SaveSearchButton />
       </Suspense>
 
       {geo.geoLat != null && geo.geoLng != null && (

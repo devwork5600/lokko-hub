@@ -41,6 +41,9 @@ model User {
   conversationsAsUser1 Conversation[] @relation("ConversationUser1")
   conversationsAsUser2 Conversation[] @relation("ConversationUser2")
 
+  savedSearches SavedSearch[]
+  notifications Notification[]
+
   @@map("user")
 }
 
@@ -304,4 +307,60 @@ model Message {
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("message")
+}
+
+//
+// ==========================
+// SAVED SEARCHES & NOTIFICATIONS
+// ==========================
+//
+
+model SavedSearch {
+  id     String @id @default(uuid())
+  userId String
+  title  String
+
+  // Mirrors getListings()'s filter params — only the ones the browse page
+  // actually exposes today (category is filtered by slug there, same here).
+  query    String?
+  category String?
+
+  geoLat      Float?
+  geoLng      Float?
+  geoRadiusKm Float?
+
+  isActive Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isActive, category])
+  @@map("saved_search")
+}
+
+enum NotificationType {
+  NEW_LISTING_MATCH
+}
+
+model Notification {
+  id     String           @id @default(uuid())
+  userId String
+  type   NotificationType
+
+  listingId String
+  payload   Json
+
+  read Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Guards against duplicate notifications if a moderation job is ever retried.
+  @@unique([userId, listingId, type])
+  @@index([userId, read])
+  @@map("notification")
 }
