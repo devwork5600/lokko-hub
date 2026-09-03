@@ -1,0 +1,88 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  --font-poppins: var(--font-poppins), sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+}
+
+:root {
+  --radius: 0.35rem;
+
+  --background: oklch(0.9761 0.0041 91.4461);
+  --foreground: oklch(0.2417 0.0298 269.8827);
+  --card: oklch(0.9761 0.0041 91.4461);
+
+  --primary: oklch(0.6171 0.1375 39.0427);
+  --primary-foreground: oklch(1 0 0);
+
+  --secondary: oklch(0.9245 0.0138 92.9892);
+  --secondary-foreground: oklch(0.4334 0.0177 98.6048);
+
+  --muted: oklch(0.9341 0.0153 90.239);
+  --muted-foreground: oklch(0.6059 0.0075 97.4233);
+
+  --accent: oklch(0.9245 0.0138 92.9892);
+  --accent-foreground: oklch(0.2671 0.0196 98.939);
+
+  --destructive: oklch(0.6 0.19 25);
+  --destructive-foreground: oklch(1 0 0);
+
+  --border: oklch(0.8847 0.0069 97.3627);
+  --input: oklch(0.7621 0.0156 98.3528);
+  --ring: oklch(0.6171 0.1375 39.0427);
+}
+
+.dark {
+  --background: #262624;
+  --foreground: #c3c0b6;
+  --card: #262624;
+
+  --primary: #d97757;
+  --primary-foreground: #ffffff;
+
+  --secondary: #faf9f5;
+  --secondary-foreground: #30302e;
+
+  --muted: #1b1b19;
+  --muted-foreground: #b7b5a9;
+
+  --accent: #1a1915;
+  --accent-foreground: #f5f4ee;
+
+  --destructive: #ef4444;
+  --destructive-foreground: #ffffff;
+
+  --border: #3e3e38;
+  --input: #52514a;
+  --ring: #d97757;
+}
+
+body {
+  background: var(--color-background);
+  color: var(--color-foreground);
+}

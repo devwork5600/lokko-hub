@@ -5,6 +5,8 @@ import { useState } from 'react';
 
 import type { CitySuggestion } from '@/app/api/city/route';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
+import { LeafletMap } from '@/components/LeafletMapClient';
+import { Button } from '@/components/ui/button';
 
 const DEFAULT_RADIUS_KM = 20;
 
@@ -24,6 +26,7 @@ export function GeoSearch() {
 
   function updateParams(next: { lat?: number; lng?: number; radiusKm?: number; clear?: boolean }) {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('page');
 
     if (next.clear) {
       params.delete('geoLat');
@@ -35,7 +38,7 @@ export function GeoSearch() {
       params.set('geoRadiusKm', String(next.radiusKm ?? radius));
     }
 
-    router.replace(`${pathname}?${params.toString()}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
   function handleCitySelect(suggestion: CitySuggestion) {
@@ -69,15 +72,24 @@ export function GeoSearch() {
   }
 
   return (
-    <div>
+    <div className="space-y-3">
+      <label className="text-sm font-medium text-foreground">Où ?</label>
       <CityAutocomplete value="" onSelect={handleCitySelect} placeholder="Chercher autour de..." />
-      <button type="button" onClick={handleLocateMe} disabled={locating}>
+      <Button type="button" variant="outline" onClick={handleLocateMe} disabled={locating} className="w-full">
         {locating ? 'Localisation...' : 'Me localiser'}
-      </button>
+      </Button>
 
       {hasCenter && (
-        <>
-          <label htmlFor="radius">Rayon : {radius} km</label>
+        <Button type="button" variant="ghost" onClick={() => updateParams({ clear: true })} className="w-full">
+          Changer de zone
+        </Button>
+      )}
+
+      {hasCenter && (
+        <div className="space-y-2 pt-1">
+          <label htmlFor="radius" className="text-sm text-muted-foreground">
+            Rayon : {radius} km
+          </label>
           <input
             id="radius"
             type="range"
@@ -86,14 +98,22 @@ export function GeoSearch() {
             step={5}
             value={radius}
             onChange={(e) => handleRadiusChange(Number(e.target.value))}
+            className="w-full accent-primary"
           />
-          <button type="button" onClick={() => updateParams({ clear: true })}>
-            Retirer le filtre géo
-          </button>
-        </>
+        </div>
       )}
 
-      {error && <p role="alert">{error}</p>}
+      {hasCenter && (
+        <div className="h-64 w-full overflow-hidden rounded-lg">
+          <LeafletMap lat={Number(currentLat)} lng={Number(currentLng)} radiusKm={radius} />
+        </div>
+      )}
+
+      {error && (
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

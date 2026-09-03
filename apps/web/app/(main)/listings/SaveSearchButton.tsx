@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 
 import { createSavedSearch } from '@/actions/saved-search-actions';
+import { Button } from '@/components/ui/button';
 
 export function SaveSearchButton() {
   const searchParams = useSearchParams();
@@ -44,37 +45,43 @@ export function SaveSearchButton() {
 
   if (!open) {
     return (
-      <div>
-        <button
+      <div className="flex items-center gap-3">
+        <Button
           type="button"
+          variant="outline"
           onClick={() => {
             setOpen(true);
             setSaved(false);
           }}
         >
           Sauvegarder cette recherche
-        </button>
-        {saved && <p role="status">Recherche sauvegardée !</p>}
+        </Button>
+        {saved && <p className="text-sm text-muted-foreground">Recherche sauvegardée !</p>}
       </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
       <input
         type="text"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         placeholder="Nom de la recherche"
         required
+        className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
       />
-      <button type="submit" disabled={saving || !title.trim()}>
+      <Button type="submit" size="sm" disabled={saving || !title.trim()}>
         {saving ? 'Enregistrement...' : 'Enregistrer'}
-      </button>
-      <button type="button" onClick={() => setOpen(false)}>
+      </Button>
+      <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
         Annuler
-      </button>
-      {error && <p role="alert">{error}</p>}
+      </Button>
+      {error && (
+        <p role="alert" className="w-full text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </form>
   );
 }

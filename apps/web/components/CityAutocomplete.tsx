@@ -46,7 +46,7 @@ export function CityAutocomplete({
   }
 
   return (
-    <div>
+    <div className="relative">
       <input
         type="text"
         value={query}
@@ -54,12 +54,17 @@ export function CityAutocomplete({
         onChange={(e) => handleChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
         onBlur={() => setTimeout(() => setOpen(false), 150)}
+        className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
       />
       {open && suggestions.length > 0 && (
-        <ul>
+        <ul className="absolute z-20 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border bg-card shadow-lg">
           {suggestions.map((suggestion) => (
             <li key={`${suggestion.city}-${suggestion.postalCode}`}>
-              <button type="button" onMouseDown={() => handleSelect(suggestion)}>
+              <button
+                type="button"
+                onMouseDown={() => handleSelect(suggestion)}
+                className="block w-full px-3 py-2 text-left text-sm text-foreground transition-colors hover:bg-muted"
+              >
                 {suggestion.city} ({suggestion.postalCode})
               </button>
             </li>
