@@ -1,7 +1,7 @@
 import { getCategories } from '@/actions/category-actions';
 import { getUser } from '@/lib/auth/auth-session';
 
-import { ListingForm } from '../ListingForm';
+import { ListingWizardForm } from './wizard/ListingWizardForm';
 
 export default async function CreateListingPage() {
   const user = await getUser();
@@ -15,10 +15,5 @@ export default async function CreateListingPage() {
 
   const categories = await getCategories();
 
-  return (
-    <main>
-      <h1>Publier une annonce</h1>
-      <ListingForm categories={categories} />
-    </main>
-  );
+  return <ListingWizardForm categories={categories} />;
 }

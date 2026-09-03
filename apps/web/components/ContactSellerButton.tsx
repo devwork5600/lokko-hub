@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { getOrCreateConversation } from '@/actions/messages-actions';
+import { Button } from '@/components/ui/button';
 
 export function ContactSellerButton({ listingId }: { listingId: string }) {
   const router = useRouter();
@@ -27,10 +28,14 @@ export function ContactSellerButton({ listingId }: { listingId: string }) {
 
   return (
     <div>
-      <button type="button" onClick={handleClick} disabled={loading}>
+      <Button type="button" onClick={handleClick} disabled={loading} className="h-10 w-full">
         {loading ? 'Ouverture...' : 'Contacter le vendeur'}
-      </button>
-      {error && <p role="alert">{error}</p>}
+      </Button>
+      {error && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
