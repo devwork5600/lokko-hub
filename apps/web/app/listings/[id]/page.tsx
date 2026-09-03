@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 import { getListingById } from '@/actions/listing-actions';
+import { LeafletMap } from '@/components/LeafletMapClient';
 import { getUser } from '@/lib/auth/auth-session';
 
 export default async function ListingDetailPage({
@@ -41,6 +42,7 @@ export default async function ListingDetailPage({
       <p>
         {listing.location.city} ({listing.location.postalCode})
       </p>
+      <LeafletMap lat={listing.location.lat} lng={listing.location.lng} radiusKm={2} />
       <p>
         {listing.category.name}
         {listing.subCategory ? ` › ${listing.subCategory.name}` : ''}

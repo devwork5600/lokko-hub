@@ -14,7 +14,7 @@ const listingCardSelect = {
   price: true,
   priceUnit: true,
   createdAt: true,
-  location: { select: { city: true, postalCode: true } },
+  location: { select: { city: true, postalCode: true, lat: true, lng: true } },
   category: { select: { name: true, slug: true } },
   subCategory: { select: { name: true, slug: true } },
   product: { select: { name: true, slug: true } },
@@ -34,6 +34,9 @@ export type GetListingsParams = {
   priceMin?: number;
   priceMax?: number;
   orderBy?: 'newest' | 'priceAsc' | 'priceDesc';
+  geoLat?: number;
+  geoLng?: number;
+  geoRadiusKm?: number;
 };
 
 export async function getListings({
@@ -46,6 +49,9 @@ export async function getListings({
   priceMin,
   priceMax,
   orderBy = 'newest',
+  geoLat,
+  geoLng,
+  geoRadiusKm,
 }: GetListingsParams = {}) {
   const skip = (page - 1) * pageSize;
 
@@ -68,6 +74,48 @@ export async function getListings({
       },
     }),
   };
+
+  // GEO MODE: filter by metadata first via Prisma to get candidate ids, then apply
+  // the radius filter + distance ordering via raw SQL (PostGIS GiST index).
+  if (geoLat != null && geoLng != null && geoRadiusKm != null) {
+    const candidates = await prisma.listing.findMany({ where, select: { id: true } });
+    const ids = candidates.map((c) => c.id);
+    if (ids.length === 0) return { listings: [], hasMore: false, total: 0 };
+
+    const radiusMeters = geoRadiusKm * 1000;
+
+    const withinIds = (await prisma.$queryRaw`
+      SELECT l.id,
+        ST_Distance(loc.coords, ST_SetSRID(ST_MakePoint(${geoLng}, ${geoLat}), 4326)::geography) AS distance
+      FROM listing l
+      JOIN location loc ON l."locationId" = loc.id
+      WHERE l.id IN (${Prisma.join(ids)})
+        AND ST_DWithin(loc.coords, ST_SetSRID(ST_MakePoint(${geoLng}, ${geoLat}), 4326)::geography, ${radiusMeters})
+      ORDER BY distance ASC
+      LIMIT ${pageSize} OFFSET ${skip}
+    `) as { id: string; distance: number }[];
+
+    const totalRows = (await prisma.$queryRaw`
+      SELECT COUNT(*)::int AS count
+      FROM listing l
+      JOIN location loc ON l."locationId" = loc.id
+      WHERE l.id IN (${Prisma.join(ids)})
+        AND ST_DWithin(loc.coords, ST_SetSRID(ST_MakePoint(${geoLng}, ${geoLat}), 4326)::geography, ${radiusMeters})
+    `) as { count: number }[];
+
+    const enriched = await prisma.listing.findMany({
+      where: { id: { in: withinIds.map((r) => r.id) } },
+      select: listingCardSelect,
+    });
+    const byId = new Map(enriched.map((l) => [l.id, l]));
+
+    const listings = withinIds
+      .map((r) => byId.get(r.id))
+      .filter((l): l is NonNullable<typeof l> => l != null);
+
+    const total = totalRows[0]?.count ?? 0;
+    return { listings, hasMore: skip + listings.length < total, total };
+  }
 
   const [total, listings] = await Promise.all([
     prisma.listing.count({ where }),
@@ -106,7 +154,7 @@ export async function getListingById(id: string) {
       category: { select: { id: true, name: true, slug: true } },
       subCategory: { select: { id: true, name: true, slug: true } },
       product: { select: { id: true, name: true, slug: true } },
-      location: { select: { city: true, postalCode: true } },
+      location: { select: { city: true, postalCode: true, lat: true, lng: true } },
       owner: { select: { id: true, name: true, image: true } },
       images: { orderBy: { index: 'asc' }, select: { url: true, altText: true } },
     },
@@ -139,10 +187,19 @@ export async function getUserListings() {
 // the same address, and mutating it in place would silently change every
 // other listing that happens to share it. Always resolve to a row (existing
 // or freshly created) and repoint the listing's locationId instead.
-async function findOrCreateLocation(city: string, postalCode: string) {
+async function findOrCreateLocation(city: string, postalCode: string, lat: number, lng: number) {
   const existing = await prisma.location.findFirst({ where: { city, postalCode } });
   if (existing) return existing;
-  return prisma.location.create({ data: { city, postalCode } });
+
+  // Two-step create: Prisma can't write the Unsupported("geography") coords
+  // column directly, so create the row first, then set coords via raw SQL.
+  const created = await prisma.location.create({ data: { city, postalCode, lat, lng } });
+  await prisma.$executeRaw`
+    UPDATE location
+    SET coords = ST_SetSRID(ST_MakePoint(${lng}, ${lat}), 4326)::geography
+    WHERE id = ${created.id}
+  `;
+  return created;
 }
 
 type ListingActionResult = {
@@ -168,7 +225,7 @@ export async function createListing(data: ListingDraft): Promise<ListingActionRe
   const { title, description, categoryId, subCategoryId, productId, location, price, images } =
     validation.data;
 
-  const locationRow = await findOrCreateLocation(location.city, location.postalCode);
+  const locationRow = await findOrCreateLocation(location.city, location.postalCode, location.lat, location.lng);
 
   const listing = await prisma.listing.create({
     data: {
@@ -215,7 +272,7 @@ export async function updateListing(
   const { title, description, categoryId, subCategoryId, productId, location, price, images } =
     validation.data;
 
-  const locationRow = await findOrCreateLocation(location.city, location.postalCode);
+  const locationRow = await findOrCreateLocation(location.city, location.postalCode, location.lat, location.lng);
 
   // Replace images wholesale rather than upserting by index: a reorder moves a url
   // to a new index, and upserting-by-index would overwrite whatever row already held

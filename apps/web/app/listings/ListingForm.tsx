@@ -6,6 +6,8 @@ import { useState } from 'react';
 
 import { createListing, updateListing } from '@/actions/listing-actions';
 import type { Category } from '@/actions/category-actions';
+import type { CitySuggestion } from '@/app/api/city/route';
+import { CityAutocomplete } from '@/components/CityAutocomplete';
 
 type ListingImageValue = { url: string; index: number };
 
@@ -17,6 +19,8 @@ type ListingFormValues = {
   productId: string;
   city: string;
   postalCode: string;
+  lat: number | null;
+  lng: number | null;
   priceValue: string;
   priceUnit: 'UNIT' | 'KG' | 'L';
   images: ListingImageValue[];
@@ -30,6 +34,8 @@ const EMPTY_VALUES: ListingFormValues = {
   productId: '',
   city: '',
   postalCode: '',
+  lat: null,
+  lng: null,
   priceValue: '',
   priceUnit: 'UNIT',
   images: [],
@@ -119,13 +125,24 @@ export function ListingForm({
     setError(null);
     setSubmitting(true);
 
+    if (values.lat == null || values.lng == null) {
+      setError('Choisis une ville dans la liste.');
+      setSubmitting(false);
+      return;
+    }
+
     const draft = {
       title: values.title,
       description: values.description,
       categoryId: values.categoryId,
       subCategoryId: values.subCategoryId,
       productId: values.productId,
-      location: { city: values.city, postalCode: values.postalCode },
+      location: {
+        city: values.city,
+        postalCode: values.postalCode,
+        lat: values.lat,
+        lng: values.lng,
+      },
       price: { value: Number(values.priceValue), unit: values.priceUnit },
       images: values.images,
     };
@@ -228,16 +245,17 @@ export function ListingForm({
 
       <div>
         <label htmlFor="city">Ville</label>
-        <input id="city" value={values.city} onChange={(e) => set('city', e.target.value)} required />
-      </div>
-
-      <div>
-        <label htmlFor="postalCode">Code postal</label>
-        <input
-          id="postalCode"
-          value={values.postalCode}
-          onChange={(e) => set('postalCode', e.target.value)}
-          required
+        <CityAutocomplete
+          value={values.city && values.postalCode ? `${values.city} (${values.postalCode})` : ''}
+          onSelect={(suggestion: CitySuggestion) => {
+            setValues((prev) => ({
+              ...prev,
+              city: suggestion.city,
+              postalCode: suggestion.postalCode,
+              lat: suggestion.lat,
+              lng: suggestion.lng,
+            }));
+          }}
         />
       </div>
 

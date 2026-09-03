@@ -11,6 +11,8 @@ export const listingSchema = z.object({
   location: z.object({
     city: z.string().min(1, 'Ville obligatoire'),
     postalCode: z.string().min(1, 'Code postal obligatoire'),
+    lat: z.number(),
+    lng: z.number(),
   }),
 
   price: z.object({

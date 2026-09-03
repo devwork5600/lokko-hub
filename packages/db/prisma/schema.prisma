@@ -1,9 +1,11 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
+  provider   = "postgresql"
+  extensions = [postgis]
 }
 
 //
@@ -209,19 +211,21 @@ model ListingImage {
   @@map("listing_image")
 }
 
-// Deliberately minimal for now: just enough to attach a listing to a place.
-// lat/lng/PostGIS coords land together with the geo-search slice, not before —
-// no point half-wiring fields nothing reads yet.
 model Location {
   id String @id @default(uuid())
 
   city       String
   postalCode String
+  lat        Float
+  lng        Float
+  coords     Unsupported("geography(Point, 4326)")?
 
   listings Listing[]
 
   createdAt DateTime @default(now())
 
   @@index([city, postalCode])
+  @@index([lat, lng])
+  @@index([coords], type: Gist)
   @@map("location")
 }

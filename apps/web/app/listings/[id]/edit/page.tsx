@@ -40,6 +40,8 @@ export default async function EditListingPage({
           productId: listing.product?.id ?? '',
           city: listing.location.city,
           postalCode: listing.location.postalCode,
+          lat: listing.location.lat,
+          lng: listing.location.lng,
           priceValue: String(listing.price),
           priceUnit: listing.priceUnit,
           images: listing.images.map((img, index) => ({ url: img.url, index })),
