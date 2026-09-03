@@ -16,6 +16,7 @@ const prismaMock = {
     createMany: vi.fn(),
   },
   $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
+  $executeRaw: vi.fn(),
 };
 
 vi.mock('@lokko-hub/db', () => ({
@@ -33,7 +34,7 @@ const validDraft = {
   categoryId: '123e4567-e89b-12d3-a456-426614174000',
   subCategoryId: '',
   productId: '',
-  location: { city: 'Rennes', postalCode: '35000' },
+  location: { city: 'Rennes', postalCode: '35000', lat: 48.1147, lng: -1.6794 },
   price: { value: 3.5, unit: 'KG' as const },
   images: [{ url: 'https://res.cloudinary.com/demo/image/upload/tomatoes.jpg', index: 0 }],
 };
@@ -78,8 +79,9 @@ describe('updateListing', () => {
     await updateListing('listing-1', validDraft);
 
     expect(prismaMock.location.create).toHaveBeenCalledWith({
-      data: { city: 'Rennes', postalCode: '35000' },
+      data: { city: 'Rennes', postalCode: '35000', lat: 48.1147, lng: -1.6794 },
     });
+    expect(prismaMock.$executeRaw).toHaveBeenCalled();
     expect(prismaMock.location.update).not.toHaveBeenCalled();
   });
 
