@@ -37,6 +37,10 @@ model User {
   accounts Account[]
   listings Listing[]
 
+  messages             Message[]      @relation("UserMessages")
+  conversationsAsUser1 Conversation[] @relation("ConversationUser1")
+  conversationsAsUser2 Conversation[] @relation("ConversationUser2")
+
   @@map("user")
 }
 
@@ -188,7 +192,8 @@ model Listing {
   subCategory Category? @relation("ListingSubCategory", fields: [subCategoryId], references: [id])
   product     Product?  @relation(fields: [productId], references: [id])
   location    Location  @relation(fields: [locationId], references: [id])
-  images      ListingImage[]
+  images        ListingImage[]
+  conversations Conversation[] @relation("ListingToConversation")
 
   @@index([categoryId, status])
   @@index([locationId])
@@ -239,4 +244,64 @@ model Location {
   @@index([lat, lng])
   @@index([coords], type: Gist)
   @@map("location")
+}
+
+//
+// ==========================
+// MESSAGING
+// ==========================
+//
+
+model Conversation {
+  id String @id @default(uuid())
+
+  listingId String
+  user1Id   String
+  user2Id   String
+
+  user1LastReadAt DateTime?
+  user2LastReadAt DateTime?
+
+  user1UnreadCount Int @default(0)
+  user2UnreadCount Int @default(0)
+
+  user1DeletedAt DateTime?
+  user2DeletedAt DateTime?
+
+  lastMessageAt       DateTime?
+  lastMessagePreview  String?
+  lastMessageSenderId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  listing Listing @relation("ListingToConversation", fields: [listingId], references: [id], onDelete: Cascade)
+  user1   User    @relation("ConversationUser1", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2   User    @relation("ConversationUser2", fields: [user2Id], references: [id], onDelete: Cascade)
+
+  messages Message[]
+
+  // App must enforce user1Id < user2Id ordering to prevent duplicate conversations
+  @@unique([listingId, user1Id, user2Id])
+  @@index([user1Id, lastMessageAt])
+  @@index([user2Id, lastMessageAt])
+  @@map("conversation")
+}
+
+model Message {
+  id String @id @default(uuid())
+
+  content String
+
+  senderId       String
+  conversationId String
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation("UserMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("message")
 }
