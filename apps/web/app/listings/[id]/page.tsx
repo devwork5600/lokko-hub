@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { getListingById } from '@/actions/listing-actions';
 import { LeafletMap } from '@/components/LeafletMapClient';
+import { OwnerOnlineBadge } from '@/components/OwnerOnlineBadge';
 import { getUser } from '@/lib/auth/auth-session';
 
 export default async function ListingDetailPage({
@@ -59,7 +60,10 @@ export default async function ListingDetailPage({
         {listing.product ? ` › ${listing.product.name}` : ''}
       </p>
       <p>{listing.description}</p>
-      <p>Vendu par {listing.owner.name || 'un utilisateur'}</p>
+      <p>
+        Vendu par {listing.owner.name || 'un utilisateur'}
+        <OwnerOnlineBadge ownerId={listing.ownerId} />
+      </p>
 
       {isOwner && <Link href={`/listings/${listing.id}/edit`}>Modifier l&apos;annonce</Link>}
     </main>
