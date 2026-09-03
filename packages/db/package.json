@@ -1,8 +1,25 @@
 {
   "name": "@lokko-hub/db",
   "version": "0.1.0",
+  "type": "module",
   "private": true,
   "main": "index.ts",
   "types": "index.ts",
-  "scripts": {}
+  "scripts": {
+    "build": "prisma generate && tsc",
+    "dev": "tsc --watch",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push"
+  },
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.19",
+    "@types/pg": "^8.20.0",
+    "dotenv": "^17.4.2",
+    "prisma": "^7.8.0"
+  }
 }

@@ -12,6 +12,12 @@ concurrency:
 jobs:
   lint-and-build:
     runs-on: ubuntu-latest
+    env:
+      # Build-time only: route/config collection imports @lokko-hub/db, which requires
+      # DATABASE_URL to be set even though no real connection is opened during build.
+      DATABASE_URL: postgresql://placeholder:placeholder@localhost:5432/placeholder
+      BETTER_AUTH_SECRET: placeholder-ci-secret-not-used-at-build-time
+      BETTER_AUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 
@@ -25,3 +31,5 @@ jobs:
       - run: npm run lint
 
       - run: npm run build
+
+      - run: npm run test
