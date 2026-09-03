@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 import { getListingById } from '@/actions/listing-actions';
 import { LeafletMap } from '@/components/LeafletMapClient';
+import { ContactSellerButton } from '@/components/ContactSellerButton';
 import { OwnerOnlineBadge } from '@/components/OwnerOnlineBadge';
 import { getUser } from '@/lib/auth/auth-session';
 
@@ -66,6 +67,7 @@ export default async function ListingDetailPage({
       </p>
 
       {isOwner && <Link href={`/listings/${listing.id}/edit`}>Modifier l&apos;annonce</Link>}
+      {!isOwner && user && <ContactSellerButton listingId={listing.id} />}
     </main>
   );
 }
