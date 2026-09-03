@@ -182,12 +182,31 @@ model Listing {
   subCategory Category? @relation("ListingSubCategory", fields: [subCategoryId], references: [id])
   product     Product?  @relation(fields: [productId], references: [id])
   location    Location  @relation(fields: [locationId], references: [id])
+  images      ListingImage[]
 
   @@index([categoryId, status])
   @@index([locationId])
   @@index([createdAt])
   @@index([ownerId])
   @@map("listing")
+}
+
+// No moderation status yet (PENDING/SAFE/NSFW lands with the moderation slice,
+// once there's an actual queue/worker to set it) — images are accepted as-is.
+model ListingImage {
+  id        String  @id @default(uuid())
+  listingId String
+  url       String
+  altText   String?
+  index     Int
+
+  createdAt DateTime @default(now())
+
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@unique([listingId, index])
+  @@index([listingId])
+  @@map("listing_image")
 }
 
 // Deliberately minimal for now: just enough to attach a listing to a place.

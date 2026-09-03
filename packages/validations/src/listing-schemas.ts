@@ -17,6 +17,16 @@ export const listingSchema = z.object({
     value: z.number().positive('Prix invalide'),
     unit: z.enum(['UNIT', 'KG', 'L']),
   }),
+
+  images: z
+    .array(
+      z.object({
+        url: z.string().url(),
+        index: z.number(),
+      }),
+    )
+    .min(1, 'Ajoutez au moins une image')
+    .max(3, 'Maximum 3 images'),
 });
 
 export type ListingDraft = z.infer<typeof listingSchema>;
