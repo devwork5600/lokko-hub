@@ -19,6 +19,7 @@ const listingCardSelect = {
   subCategory: { select: { name: true, slug: true } },
   product: { select: { name: true, slug: true } },
   owner: { select: { id: true, name: true, image: true } },
+  images: { orderBy: { index: 'asc' }, take: 1, select: { url: true, altText: true } },
 } satisfies Prisma.ListingSelect;
 
 export type ListingCard = Prisma.ListingGetPayload<{ select: typeof listingCardSelect }>;
@@ -107,6 +108,7 @@ export async function getListingById(id: string) {
       product: { select: { id: true, name: true, slug: true } },
       location: { select: { city: true, postalCode: true } },
       owner: { select: { id: true, name: true, image: true } },
+      images: { orderBy: { index: 'asc' }, select: { url: true, altText: true } },
     },
   });
 }
@@ -128,6 +130,7 @@ export async function getUserListings() {
       status: true,
       createdAt: true,
       category: { select: { name: true, slug: true } },
+      images: { orderBy: { index: 'asc' }, take: 1, select: { url: true, altText: true } },
     },
   });
 }
@@ -162,7 +165,7 @@ export async function createListing(data: ListingDraft): Promise<ListingActionRe
     };
   }
 
-  const { title, description, categoryId, subCategoryId, productId, location, price } =
+  const { title, description, categoryId, subCategoryId, productId, location, price, images } =
     validation.data;
 
   const locationRow = await findOrCreateLocation(location.city, location.postalCode);
@@ -178,6 +181,7 @@ export async function createListing(data: ListingDraft): Promise<ListingActionRe
       subCategoryId: subCategoryId || null,
       productId: productId || null,
       locationId: locationRow.id,
+      images: { create: images.map((img) => ({ url: img.url, index: img.index })) },
     },
     select: { id: true },
   });
@@ -208,24 +212,35 @@ export async function updateListing(
     };
   }
 
-  const { title, description, categoryId, subCategoryId, productId, location, price } =
+  const { title, description, categoryId, subCategoryId, productId, location, price, images } =
     validation.data;
 
   const locationRow = await findOrCreateLocation(location.city, location.postalCode);
 
-  await prisma.listing.update({
-    where: { id: listingId },
-    data: {
-      title,
-      description,
-      price: price.value,
-      priceUnit: price.unit,
-      categoryId,
-      subCategoryId: subCategoryId || null,
-      productId: productId || null,
-      locationId: locationRow.id,
-    },
-  });
+  // Replace images wholesale rather than upserting by index: a reorder moves a url
+  // to a new index, and upserting-by-index would overwrite whatever row already held
+  // that index instead of the row that actually owns the url — leaving stale
+  // duplicate rows behind (a real bug found in lokko-v4). Delete-then-recreate has
+  // no such ambiguity.
+  await prisma.$transaction([
+    prisma.listing.update({
+      where: { id: listingId },
+      data: {
+        title,
+        description,
+        price: price.value,
+        priceUnit: price.unit,
+        categoryId,
+        subCategoryId: subCategoryId || null,
+        productId: productId || null,
+        locationId: locationRow.id,
+      },
+    }),
+    prisma.listingImage.deleteMany({ where: { listingId } }),
+    prisma.listingImage.createMany({
+      data: images.map((img) => ({ listingId, url: img.url, index: img.index })),
+    }),
+  ]);
 
   return { success: true, listingId };
 }

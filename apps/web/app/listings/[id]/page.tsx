@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
@@ -19,6 +20,21 @@ export default async function ListingDetailPage({
   return (
     <main>
       <h1>{listing.title}</h1>
+
+      {listing.images.length > 0 && (
+        <div>
+          {listing.images.map((image) => (
+            <Image
+              key={image.url}
+              src={image.url}
+              alt={image.altText ?? listing.title}
+              width={300}
+              height={300}
+            />
+          ))}
+        </div>
+      )}
+
       <p>
         {listing.price}€{listing.priceUnit !== 'UNIT' ? `/${listing.priceUnit.toLowerCase()}` : ''}
       </p>

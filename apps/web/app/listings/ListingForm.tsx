@@ -1,10 +1,13 @@
 'use client';
 
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 
 import { createListing, updateListing } from '@/actions/listing-actions';
 import type { Category } from '@/actions/category-actions';
+
+type ListingImageValue = { url: string; index: number };
 
 type ListingFormValues = {
   title: string;
@@ -16,6 +19,7 @@ type ListingFormValues = {
   postalCode: string;
   priceValue: string;
   priceUnit: 'UNIT' | 'KG' | 'L';
+  images: ListingImageValue[];
 };
 
 const EMPTY_VALUES: ListingFormValues = {
@@ -28,7 +32,10 @@ const EMPTY_VALUES: ListingFormValues = {
   postalCode: '',
   priceValue: '',
   priceUnit: 'UNIT',
+  images: [],
 };
+
+const MAX_IMAGES = 3;
 
 export function ListingForm({
   categories,
@@ -43,6 +50,7 @@ export function ListingForm({
   const [values, setValues] = useState<ListingFormValues>({ ...EMPTY_VALUES, ...initialValues });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const selectedCategory = categories.find((c) => c.id === values.categoryId);
   const subcategories = selectedCategory?.subcategories ?? [];
@@ -51,6 +59,59 @@ export function ListingForm({
 
   function set<K extends keyof ListingFormValues>(key: K, value: ListingFormValues[K]) {
     setValues((prev) => ({ ...prev, [key]: value }));
+  }
+
+  function reindex(images: { url: string }[]): ListingImageValue[] {
+    return images.map((img, index) => ({ url: img.url, index }));
+  }
+
+  async function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
+    if (files.length === 0) return;
+
+    setError(null);
+    setUploading(true);
+
+    try {
+      for (const file of files) {
+        if (values.images.length + 1 > MAX_IMAGES) {
+          setError(`Maximum ${MAX_IMAGES} images.`);
+          break;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await fetch('/api/upload', { method: 'POST', body: formData });
+        const result = await response.json();
+
+        if (!response.ok) {
+          setError(result.error ?? "Échec de l'upload.");
+          break;
+        }
+
+        setValues((prev) => ({ ...prev, images: reindex([...prev.images, { url: result.url }]) }));
+      }
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function removeImage(index: number) {
+    setValues((prev) => ({
+      ...prev,
+      images: reindex(prev.images.filter((img) => img.index !== index)),
+    }));
+  }
+
+  function moveImage(index: number, direction: -1 | 1) {
+    setValues((prev) => {
+      const next = [...prev.images];
+      const target = index + direction;
+      if (target < 0 || target >= next.length) return prev;
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...prev, images: reindex(next) };
+    });
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -66,6 +127,7 @@ export function ListingForm({
       productId: values.productId,
       location: { city: values.city, postalCode: values.postalCode },
       price: { value: Number(values.priceValue), unit: values.priceUnit },
+      images: values.images,
     };
 
     const result = listingId
@@ -200,9 +262,45 @@ export function ListingForm({
         </select>
       </div>
 
+      <div>
+        <label htmlFor="images">Photos (max {MAX_IMAGES})</label>
+        <input
+          id="images"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          onChange={handleFileChange}
+          disabled={uploading || values.images.length >= MAX_IMAGES}
+        />
+        {uploading && <p>Envoi en cours...</p>}
+
+        {values.images.length > 0 && (
+          <ul>
+            {values.images.map((image, i) => (
+              <li key={image.url}>
+                <Image src={image.url} alt="" width={80} height={80} />
+                <button type="button" onClick={() => moveImage(i, -1)} disabled={i === 0}>
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveImage(i, 1)}
+                  disabled={i === values.images.length - 1}
+                >
+                  ↓
+                </button>
+                <button type="button" onClick={() => removeImage(image.index)}>
+                  Retirer
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       {error && <p role="alert">{error}</p>}
 
-      <button type="submit" disabled={submitting}>
+      <button type="submit" disabled={submitting || uploading}>
         {submitting ? 'Envoi...' : listingId ? 'Enregistrer' : 'Publier'}
       </button>
     </form>

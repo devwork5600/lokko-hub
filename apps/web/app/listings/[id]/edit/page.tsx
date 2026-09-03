@@ -42,6 +42,7 @@ export default async function EditListingPage({
           postalCode: listing.location.postalCode,
           priceValue: String(listing.price),
           priceUnit: listing.priceUnit,
+          images: listing.images.map((img, index) => ({ url: img.url, index })),
         }}
       />
     </main>

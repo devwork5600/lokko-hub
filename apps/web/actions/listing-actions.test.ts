@@ -11,6 +11,11 @@ const prismaMock = {
     update: vi.fn(),
     create: vi.fn(),
   },
+  listingImage: {
+    deleteMany: vi.fn(),
+    createMany: vi.fn(),
+  },
+  $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
 };
 
 vi.mock('@lokko-hub/db', () => ({
@@ -30,6 +35,7 @@ const validDraft = {
   productId: '',
   location: { city: 'Rennes', postalCode: '35000' },
   price: { value: 3.5, unit: 'KG' as const },
+  images: [{ url: 'https://res.cloudinary.com/demo/image/upload/tomatoes.jpg', index: 0 }],
 };
 
 describe('updateListing', () => {
