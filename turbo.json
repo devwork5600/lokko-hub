@@ -9,7 +9,10 @@
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "RESEND_API_KEY",
-        "EMAIL_FROM"
+        "EMAIL_FROM",
+        "UPSTASH_REDIS_URL",
+        "NSFW_API_URL",
+        "NSFW_API_KEY"
       ]
     },
     "lint": {
@@ -28,7 +31,10 @@
         "BETTER_AUTH_SECRET",
         "BETTER_AUTH_URL",
         "RESEND_API_KEY",
-        "EMAIL_FROM"
+        "EMAIL_FROM",
+        "UPSTASH_REDIS_URL",
+        "NSFW_API_URL",
+        "NSFW_API_KEY"
       ]
     },
     "dev": {

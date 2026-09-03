@@ -154,6 +154,8 @@ enum PriceUnit {
 enum ListingStatus {
   ACTIVE
   ARCHIVED
+  VERIFICATION
+  REJECTED
 }
 
 model Listing {
@@ -165,7 +167,9 @@ model Listing {
   price     Float
   priceUnit PriceUnit
 
-  status ListingStatus @default(ACTIVE)
+  status          ListingStatus @default(VERIFICATION)
+  rejectionReason String?
+  nsfwResults     Json?
 
   archivedAt DateTime?
   deletedAt  DateTime?
@@ -193,8 +197,12 @@ model Listing {
   @@map("listing")
 }
 
-// No moderation status yet (PENDING/SAFE/NSFW lands with the moderation slice,
-// once there's an actual queue/worker to set it) — images are accepted as-is.
+enum ImageStatus {
+  PENDING
+  SAFE
+  NSFW
+}
+
 model ListingImage {
   id        String  @id @default(uuid())
   listingId String
@@ -202,7 +210,10 @@ model ListingImage {
   altText   String?
   index     Int
 
+  status ImageStatus @default(PENDING)
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
 

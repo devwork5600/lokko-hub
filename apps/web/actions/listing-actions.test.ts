@@ -12,6 +12,7 @@ const prismaMock = {
     create: vi.fn(),
   },
   listingImage: {
+    findMany: vi.fn(),
     deleteMany: vi.fn(),
     createMany: vi.fn(),
   },
@@ -22,6 +23,11 @@ const prismaMock = {
 vi.mock('@lokko-hub/db', () => ({
   prisma: prismaMock,
   Prisma: {},
+}));
+
+const addJobMock = vi.fn();
+vi.mock('@/lib/queue', () => ({
+  getListingQueue: () => ({ add: addJobMock }),
 }));
 
 vi.mock('@/lib/auth/auth-session', () => ({
@@ -42,6 +48,11 @@ const validDraft = {
 describe('updateListing', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Same images as validDraft by default, so imagesChanged is false unless a
+    // test overrides this — these tests are about Location, not moderation.
+    prismaMock.listingImage.findMany.mockResolvedValue(
+      validDraft.images.map((img) => ({ url: img.url })),
+    );
   });
 
   it('never mutates an existing Location row, even when it is shared with another listing', async () => {
@@ -96,5 +107,50 @@ describe('updateListing', () => {
 
     expect(result).toEqual({ success: false, error: 'Forbidden' });
     expect(prismaMock.listing.update).not.toHaveBeenCalled();
+  });
+
+  it('does not reset status or enqueue moderation when the images are unchanged', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+
+    prismaMock.listing.findUnique.mockResolvedValue({ ownerId: 'user-1' });
+    prismaMock.location.findFirst.mockResolvedValue({ id: 'location-1' });
+    prismaMock.listing.update.mockResolvedValue({});
+    // beforeEach already makes listingImage.findMany return validDraft's own images.
+
+    const { updateListing } = await import('./listing-actions');
+    await updateListing('listing-1', validDraft);
+
+    expect(prismaMock.listing.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.not.objectContaining({ status: expect.anything() }),
+      }),
+    );
+    expect(addJobMock).not.toHaveBeenCalled();
+  });
+
+  it('resets status to VERIFICATION and enqueues moderation when the images change', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+
+    prismaMock.listing.findUnique.mockResolvedValue({ ownerId: 'user-1' });
+    prismaMock.location.findFirst.mockResolvedValue({ id: 'location-1' });
+    prismaMock.listing.update.mockResolvedValue({});
+    prismaMock.listingImage.findMany.mockResolvedValue([
+      { url: 'https://res.cloudinary.com/demo/image/upload/old-photo.jpg' },
+    ]);
+
+    const { updateListing } = await import('./listing-actions');
+    await updateListing('listing-1', validDraft);
+
+    expect(prismaMock.listing.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'VERIFICATION', rejectionReason: null }),
+      }),
+    );
+    expect(addJobMock).toHaveBeenCalledWith(
+      'listing-job',
+      expect.objectContaining({ listingId: 'listing-1', isNew: false }),
+    );
   });
 });
