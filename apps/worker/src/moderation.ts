@@ -3,6 +3,8 @@ import Redis from 'ioredis';
 
 import { prisma } from '@lokko-hub/db';
 
+import { matchSavedSearches } from './notifications';
+
 // Same normalization as apps/web/lib/redis.ts. Upstash hands out plain redis://
 // connection strings that still require TLS — connecting without upgrading to
 // rediss:// doesn't error, it just hangs in ioredis's default (infinite) retry
@@ -74,9 +76,10 @@ async function classifyImage(imageUrl: string): Promise<string> {
 export type ListingJobData = {
   listingId: string;
   images: string[];
+  isNew?: boolean;
 };
 
-export async function processListingJob({ listingId, images }: ListingJobData) {
+export async function processListingJob({ listingId, images, isNew }: ListingJobData) {
   console.log(`[moderation] processing listing ${listingId} (${images.length} image(s))`);
 
   let hasNsfw = false;
@@ -108,6 +111,16 @@ export async function processListingJob({ listingId, images }: ListingJobData) {
   });
 
   console.log(`[moderation] listing ${listingId} -> ${hasNsfw ? 'REJECTED' : 'ACTIVE'}`);
+
+  // Only check saved searches for genuinely new listings — re-moderation on an
+  // edit (isNew: false) shouldn't re-notify everyone who already saw this listing.
+  if (isNew && !hasNsfw) {
+    try {
+      await matchSavedSearches(listingId);
+    } catch (err) {
+      console.error(`[moderation] saved-search matching failed for ${listingId}:`, err);
+    }
+  }
 }
 
 export function startModerationWorker() {
