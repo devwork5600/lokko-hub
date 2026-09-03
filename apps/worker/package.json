@@ -10,7 +10,10 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@lokko-hub/db": "*",
+    "bullmq": "^5.78.0",
     "dotenv": "^17.4.2",
+    "ioredis": "^5.10.1",
     "tsx": "^4.22.3"
   },
   "devDependencies": {

@@ -22,6 +22,16 @@ export default async function ListingDetailPage({
     <main>
       <h1>{listing.title}</h1>
 
+      {isOwner && listing.status === 'VERIFICATION' && (
+        <p role="status">Ton annonce est en cours de vérification, elle n&apos;est visible que par toi pour l&apos;instant.</p>
+      )}
+      {isOwner && listing.status === 'REJECTED' && (
+        <p role="alert">
+          Ton annonce a été rejetée{listing.rejectionReason ? ` : ${listing.rejectionReason}` : ''}. Modifie les
+          photos et enregistre pour relancer la vérification.
+        </p>
+      )}
+
       {listing.images.length > 0 && (
         <div>
           {listing.images.map((image) => (

@@ -7,6 +7,7 @@ import { prisma, Prisma } from '@lokko-hub/db';
 import { listingSchema, type ListingDraft } from '@lokko-hub/validations';
 
 import { getUser } from '@/lib/auth/auth-session';
+import { getListingQueue } from '@/lib/queue';
 
 const listingCardSelect = {
   id: true,
@@ -149,6 +150,7 @@ export async function getListingById(id: string) {
       price: true,
       priceUnit: true,
       status: true,
+      rejectionReason: true,
       createdAt: true,
       ownerId: true,
       category: { select: { id: true, name: true, slug: true } },
@@ -243,6 +245,18 @@ export async function createListing(data: ListingDraft): Promise<ListingActionRe
     select: { id: true },
   });
 
+  try {
+    await getListingQueue().add('listing-job', {
+      listingId: listing.id,
+      images: images.map((img) => img.url),
+      isNew: true,
+    });
+  } catch (err) {
+    // Don't fail the request over this — the listing is already in the DB,
+    // just stuck at VERIFICATION until someone retries moderation manually.
+    console.error('Failed to enqueue moderation job:', err);
+  }
+
   return { success: true, listingId: listing.id };
 }
 
@@ -274,6 +288,22 @@ export async function updateListing(
 
   const locationRow = await findOrCreateLocation(location.city, location.postalCode, location.lat, location.lng);
 
+  // Only re-run moderation when the actual image set changed. lokko-v4's edit flow
+  // unconditionally resets status to VERIFICATION on every save with the
+  // re-moderation enqueue nested inside an `if (images)` block that only exists on
+  // the create path — so a title/price/description-only edit resets status but
+  // nothing ever moves it back to ACTIVE. Comparing url sets fixes both halves at
+  // once: no-op edits leave status alone, real image changes both reset status and
+  // enqueue moderation.
+  const existingImages = await prisma.listingImage.findMany({
+    where: { listingId },
+    select: { url: true },
+  });
+  const existingUrls = existingImages.map((img) => img.url).sort();
+  const newUrls = images.map((img) => img.url).sort();
+  const imagesChanged =
+    existingUrls.length !== newUrls.length || existingUrls.some((url, i) => url !== newUrls[i]);
+
   // Replace images wholesale rather than upserting by index: a reorder moves a url
   // to a new index, and upserting-by-index would overwrite whatever row already held
   // that index instead of the row that actually owns the url — leaving stale
@@ -291,6 +321,7 @@ export async function updateListing(
         subCategoryId: subCategoryId || null,
         productId: productId || null,
         locationId: locationRow.id,
+        ...(imagesChanged ? { status: 'VERIFICATION', rejectionReason: null } : {}),
       },
     }),
     prisma.listingImage.deleteMany({ where: { listingId } }),
@@ -298,6 +329,18 @@ export async function updateListing(
       data: images.map((img) => ({ listingId, url: img.url, index: img.index })),
     }),
   ]);
+
+  if (imagesChanged) {
+    try {
+      await getListingQueue().add('listing-job', {
+        listingId,
+        images: images.map((img) => img.url),
+        isNew: false,
+      });
+    } catch (err) {
+      console.error('Failed to enqueue re-moderation job:', err);
+    }
+  }
 
   return { success: true, listingId };
 }
