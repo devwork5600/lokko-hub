@@ -8,6 +8,7 @@
   "scripts": {
     "build": "prisma generate && tsc",
     "dev": "tsc --watch",
+    "lint": "eslint .",
     "db:generate": "prisma generate",
     "db:push": "prisma db push"
   },
