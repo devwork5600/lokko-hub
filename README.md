@@ -16,5 +16,7 @@ Vercel + Railway deployment strategy).
 
 ```bash
 npm install
+npm run db:push -w @lokko-hub/db   # sync schema to your DATABASE_URL
+npm run db:seed -w @lokko-hub/db   # seed categories/products taxonomy
 npm run dev
 ```

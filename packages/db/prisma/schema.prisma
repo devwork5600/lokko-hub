@@ -33,6 +33,7 @@ model User {
 
   sessions Session[]
   accounts Account[]
+  listings Listing[]
 
   @@map("user")
 }
@@ -87,4 +88,121 @@ model Verification {
   updatedAt DateTime @updatedAt
 
   @@map("verification")
+}
+
+//
+// ==========================
+// CATEGORIES & PRODUCTS
+// ==========================
+//
+
+model Category {
+  id   String @id @default(uuid())
+  name String
+  slug String
+
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+
+  products Product[]
+
+  listings    Listing[] @relation("ListingCategory")
+  subListings Listing[] @relation("ListingSubCategory")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, parentId])
+  @@index([parentId])
+  @@map("category")
+}
+
+model Product {
+  id         String   @id @default(uuid())
+  name       String
+  slug       String
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  isActive Boolean @default(true)
+
+  listings Listing[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([slug, categoryId])
+  @@index([categoryId])
+  @@map("product")
+}
+
+//
+// ==========================
+// LISTINGS
+// ==========================
+//
+
+enum PriceUnit {
+  UNIT
+  KG
+  L
+}
+
+enum ListingStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+model Listing {
+  id String @id @default(uuid())
+
+  title       String
+  description String
+
+  price     Float
+  priceUnit PriceUnit
+
+  status ListingStatus @default(ACTIVE)
+
+  archivedAt DateTime?
+  deletedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  ownerId       String
+  categoryId    String
+  subCategoryId String?
+  productId     String?
+  locationId    String
+
+  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category    Category  @relation("ListingCategory", fields: [categoryId], references: [id])
+  subCategory Category? @relation("ListingSubCategory", fields: [subCategoryId], references: [id])
+  product     Product?  @relation(fields: [productId], references: [id])
+  location    Location  @relation(fields: [locationId], references: [id])
+
+  @@index([categoryId, status])
+  @@index([locationId])
+  @@index([createdAt])
+  @@index([ownerId])
+  @@map("listing")
+}
+
+// Deliberately minimal for now: just enough to attach a listing to a place.
+// lat/lng/PostGIS coords land together with the geo-search slice, not before —
+// no point half-wiring fields nothing reads yet.
+model Location {
+  id String @id @default(uuid())
+
+  city       String
+  postalCode String
+
+  listings Listing[]
+
+  createdAt DateTime @default(now())
+
+  @@index([city, postalCode])
+  @@map("location")
 }
