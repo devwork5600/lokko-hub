@@ -127,7 +127,14 @@ export function startModerationWorker() {
   const worker = new Worker<ListingJobData>(
     'lokko-hub-listing-queue',
     (job) => processListingJob(job.data),
-    { connection: getRedisConnection() },
+    {
+      connection: getRedisConnection(),
+      // Upstash bills per Redis command — BullMQ's defaults poll aggressively while idle.
+      // These cut idle-command volume (matches lokko-v4's own fix for the same cost issue).
+      stalledInterval: 300000, // check for stalled jobs every 5 minutes instead of every 30s
+      lockDuration: 300000, // lock jobs for 5 minutes so they don't get marked stalled prematurely
+      drainDelay: 30, // wait 30s when the queue is empty before polling again
+    },
   );
 
   worker.on('failed', (job, err) => {
