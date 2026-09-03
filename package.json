@@ -15,12 +15,13 @@
     "build": "turbo build",
     "dev": "turbo dev",
     "lint": "turbo lint",
+    "test": "turbo test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "prepare": "husky"
   },
   "lint-staged": {
     "**/*.{js,ts,tsx}": [
-      "eslint --fix --max-warnings 0 --no-error-on-unmatched-pattern"
+      "eslint --fix --max-warnings 0 --no-error-on-unmatched-pattern --no-warn-ignored"
     ],
     "**/*.{json,md}": [
       "prettier --write"
