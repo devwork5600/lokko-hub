@@ -347,6 +347,9 @@ model SavedSearch {
 
 enum NotificationType {
   NEW_LISTING_MATCH
+  LISTING_VALIDATED
+  LISTING_REJECTED
+  LISTING_ARCHIVED
 }
 
 model Notification {
@@ -363,7 +366,10 @@ model Notification {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Guards against duplicate notifications if a moderation job is ever retried.
+  // One row per (user, listing, type): guards against duplicate notifications on
+  // retry, and doubles as the upsert target so a repeat transition (e.g. a
+  // listing archived, then unarchived, then archived again) refreshes the same
+  // row to unread instead of piling up duplicates.
   @@unique([userId, listingId, type])
   @@index([userId, read])
   @@map("notification")

@@ -33,3 +33,15 @@ export async function markNotificationsAsRead(): Promise<{ success: boolean }> {
 
   return { success: true };
 }
+
+export async function deleteNotification(notificationId: string): Promise<{ success: boolean; error?: string }> {
+  const user = await getUser();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  const result = await prisma.notification.deleteMany({
+    where: { id: notificationId, userId: user.id },
+  });
+  if (result.count === 0) return { success: false, error: 'Not found' };
+
+  return { success: true };
+}

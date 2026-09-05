@@ -58,7 +58,7 @@ export function DialogContent({
       >
         {children}
         {showCloseButton && !fullscreen && (
-          <DialogPrimitive.Close className="absolute top-4 right-4 text-muted-foreground transition-colors hover:text-foreground">
+          <DialogPrimitive.Close className="absolute top-4 right-4 cursor-pointer text-muted-foreground transition-colors hover:text-foreground">
             <XIcon className="h-5 w-5" />
           </DialogPrimitive.Close>
         )}

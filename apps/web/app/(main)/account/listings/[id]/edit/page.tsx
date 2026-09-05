@@ -28,6 +28,7 @@ export default async function EditListingPage({
       <EditListingForm
         listingId={listing.id}
         categories={categories}
+        initialStatus={listing.status}
         rejectionReason={listing.status === 'REJECTED' ? listing.rejectionReason : null}
         defaultValues={{
           title: listing.title,

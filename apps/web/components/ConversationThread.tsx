@@ -2,6 +2,7 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 import { getConversationById, markConversationAsRead, sendMessage } from '@/actions/messages-actions';
 import { Button } from '@/components/ui/button';
@@ -83,6 +84,9 @@ export function ConversationThread({
     if (result.success) {
       const fresh = await getConversationById(conversationId);
       if (fresh) setMessages(fresh.messages);
+    } else {
+      setDraft(content);
+      toast.error(result.error ?? "Le message n'a pas pu être envoyé.");
     }
 
     setSending(false);

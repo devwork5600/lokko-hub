@@ -13,6 +13,7 @@ const prismaMock = {
     create: vi.fn(),
     findFirst: vi.fn(),
     findMany: vi.fn(),
+    update: vi.fn(),
     deleteMany: vi.fn(),
   },
 };
@@ -110,6 +111,93 @@ describe('createSavedSearch', () => {
 
     const { createSavedSearch } = await import('./saved-search-actions');
     const result = await createSavedSearch({ title: 'Tomates près de Nantes' });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Tu as déjà une recherche sauvegardée avec ce nom.',
+    });
+  });
+});
+
+describe('updateSavedSearchTitle', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('rejects when not authenticated', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue(undefined);
+
+    const { updateSavedSearchTitle } = await import('./saved-search-actions');
+    const result = await updateSavedSearchTitle('search-1', 'Nouveau nom');
+
+    expect(result).toEqual({ success: false, error: 'Unauthorized' });
+    expect(prismaMock.savedSearch.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a search not owned by the current user', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst.mockResolvedValueOnce(null);
+
+    const { updateSavedSearchTitle } = await import('./saved-search-actions');
+    const result = await updateSavedSearchTitle('search-1', 'Nouveau nom');
+
+    expect(result).toEqual({ success: false, error: 'Not found' });
+    expect(prismaMock.savedSearch.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects renaming to a title that already exists for this user (case-insensitive)', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst
+      .mockResolvedValueOnce({ id: 'search-1' }) // ownership check
+      .mockResolvedValueOnce({ id: 'search-2' }); // duplicate check
+
+    const { updateSavedSearchTitle } = await import('./saved-search-actions');
+    const result = await updateSavedSearchTitle('search-1', 'tomates près de nantes');
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Tu as déjà une recherche sauvegardée avec ce nom.',
+    });
+    expect(prismaMock.savedSearch.update).not.toHaveBeenCalled();
+  });
+
+  it('does not treat the search itself as a duplicate of its own title', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst
+      .mockResolvedValueOnce({ id: 'search-1' }) // ownership check
+      .mockResolvedValueOnce(null); // duplicate check excludes search-1
+    prismaMock.savedSearch.update.mockResolvedValue({});
+
+    const { updateSavedSearchTitle } = await import('./saved-search-actions');
+    const result = await updateSavedSearchTitle('search-1', 'Tomates près de Nantes');
+
+    expect(result).toEqual({ success: true });
+    expect(prismaMock.savedSearch.findFirst).toHaveBeenNthCalledWith(2, {
+      where: {
+        userId: 'user-1',
+        id: { not: 'search-1' },
+        title: { equals: 'Tomates près de Nantes', mode: 'insensitive' },
+      },
+      select: { id: true },
+    });
+    expect(prismaMock.savedSearch.update).toHaveBeenCalledWith({
+      where: { id: 'search-1' },
+      data: { title: 'Tomates près de Nantes' },
+    });
+  });
+
+  it('reports a friendly error if a concurrent rename races past the duplicate check', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst.mockResolvedValueOnce({ id: 'search-1' }).mockResolvedValueOnce(null);
+    prismaMock.savedSearch.update.mockRejectedValue(new PrismaClientKnownRequestError('P2002'));
+
+    const { updateSavedSearchTitle } = await import('./saved-search-actions');
+    const result = await updateSavedSearchTitle('search-1', 'Tomates près de Nantes');
 
     expect(result).toEqual({
       success: false,

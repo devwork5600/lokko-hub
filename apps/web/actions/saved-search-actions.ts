@@ -60,6 +60,49 @@ export async function getUserSavedSearches() {
   });
 }
 
+export async function updateSavedSearchTitle(savedSearchId: string, title: string): Promise<ActionResult> {
+  const user = await getUser();
+  if (!user) return { success: false, error: 'Unauthorized' };
+
+  const validation = savedSearchSchema.shape.title.safeParse(title);
+  if (!validation.success) {
+    return { success: false, error: validation.error.issues[0]?.message ?? 'Invalid data.' };
+  }
+  const nextTitle = validation.data;
+
+  const existing = await prisma.savedSearch.findFirst({
+    where: { id: savedSearchId, userId: user.id },
+    select: { id: true },
+  });
+  if (!existing) return { success: false, error: 'Not found' };
+
+  const duplicate = await prisma.savedSearch.findFirst({
+    where: {
+      userId: user.id,
+      id: { not: savedSearchId },
+      title: { equals: nextTitle, mode: 'insensitive' },
+    },
+    select: { id: true },
+  });
+  if (duplicate) {
+    return { success: false, error: 'Tu as déjà une recherche sauvegardée avec ce nom.' };
+  }
+
+  try {
+    await prisma.savedSearch.update({
+      where: { id: savedSearchId },
+      data: { title: nextTitle },
+    });
+    return { success: true };
+  } catch (error) {
+    // Race: two concurrent renames to the same title slipped past the check above.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { success: false, error: 'Tu as déjà une recherche sauvegardée avec ce nom.' };
+    }
+    throw error;
+  }
+}
+
 export async function deleteSavedSearch(savedSearchId: string): Promise<ActionResult> {
   const user = await getUser();
   if (!user) return { success: false, error: 'Unauthorized' };
