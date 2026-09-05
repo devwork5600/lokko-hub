@@ -2,6 +2,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import { getUserNotifications, markNotificationsAsRead } from '@/actions/notification-actions';
+import { SyncNotificationBadge } from '@/components/SyncNotificationBadge';
 import { getUser } from '@/lib/auth/auth-session';
 
 export default async function NotificationsPage() {
@@ -19,6 +20,7 @@ export default async function NotificationsPage() {
 
   return (
     <main>
+      <SyncNotificationBadge />
       <h1>Notifications</h1>
 
       {notifications.length === 0 ? (

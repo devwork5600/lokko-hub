@@ -4,23 +4,21 @@ import { Bell, Bookmark, Menu, MessageCircle, Search, SquarePlus, UserRound, X }
 import Link from 'next/link';
 import { useState } from 'react';
 
+import { useNotificationCounts } from '@/hooks/useNotificationCounts';
+
 import { IconLink } from './IconLink';
 import { MobileDrawer } from './MobileDrawer';
 import { ModeToggle } from './ModeToggle';
 import { NavSearchbar } from './NavSearchbar';
 import { SignOutButton } from './SignOutButton';
+import { UserMenu } from './UserMenu';
 
-export function HeaderBar({
-  isSignedIn,
-  unreadMessages,
-  unreadNotifications,
-}: {
-  isSignedIn: boolean;
-  unreadMessages: number;
-  unreadNotifications: number;
-}) {
+export function HeaderBar({ isSignedIn }: { isSignedIn: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const { data: counts } = useNotificationCounts();
+  const unreadMessages = counts?.unreadMessages ?? 0;
+  const unreadNotifications = counts?.unreadNotifications ?? 0;
 
   return (
     <div className="fixed top-0 left-0 z-40 flex h-14 w-full items-center border-b border-border bg-background px-4 shadow-sm lg:h-16 lg:px-8">
@@ -65,12 +63,7 @@ export function HeaderBar({
             <MessageCircle className="h-5 w-5" />
           </IconLink>
           {isSignedIn ? (
-            <>
-              <IconLink href="/account/listings" label="Mes annonces">
-                <UserRound className="h-5 w-5" />
-              </IconLink>
-              <SignOutButton />
-            </>
+            <UserMenu />
           ) : (
             <IconLink href="/sign-in" label="Connexion">
               <UserRound className="h-5 w-5" />

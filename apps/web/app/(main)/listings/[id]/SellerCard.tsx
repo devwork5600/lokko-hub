@@ -35,7 +35,7 @@ export function SellerCard({
 
       {isOwner ? (
         <Link
-          href={`/listings/${listingId}/edit`}
+          href={`/account/listings/${listingId}/edit`}
           className="flex h-10 items-center justify-center rounded-lg border border-border text-sm font-medium text-foreground transition-colors hover:bg-muted"
         >
           Modifier l&apos;annonce

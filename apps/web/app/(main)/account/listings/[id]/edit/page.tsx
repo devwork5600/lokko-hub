@@ -4,7 +4,7 @@ import { getCategories } from '@/actions/category-actions';
 import { getListingById } from '@/actions/listing-actions';
 import { getUser } from '@/lib/auth/auth-session';
 
-import { ListingForm } from '../../ListingForm';
+import { EditListingForm } from './EditListingForm';
 
 export default async function EditListingPage({
   params,
@@ -17,36 +17,34 @@ export default async function EditListingPage({
   if (!listing) notFound();
 
   if (!user || user.id !== listing.ownerId) {
-    return (
-      <main>
-        <p>Tu n&apos;as pas accès à cette annonce.</p>
-      </main>
-    );
+    return <p className="text-sm text-muted-foreground">Tu n&apos;as pas accès à cette annonce.</p>;
   }
 
   const categories = await getCategories();
 
   return (
-    <main>
-      <h1>Modifier l&apos;annonce</h1>
-      <ListingForm
-        categories={categories}
+    <div>
+      <h1 className="mb-6 text-xl font-semibold text-foreground">Modifier l&apos;annonce</h1>
+      <EditListingForm
         listingId={listing.id}
-        initialValues={{
+        categories={categories}
+        rejectionReason={listing.status === 'REJECTED' ? listing.rejectionReason : null}
+        defaultValues={{
           title: listing.title,
           description: listing.description,
           categoryId: listing.category.id,
           subCategoryId: listing.subCategory?.id ?? '',
           productId: listing.product?.id ?? '',
-          city: listing.location.city,
-          postalCode: listing.location.postalCode,
-          lat: listing.location.lat,
-          lng: listing.location.lng,
-          priceValue: String(listing.price),
-          priceUnit: listing.priceUnit,
+          location: {
+            city: listing.location.city,
+            postalCode: listing.location.postalCode,
+            lat: listing.location.lat,
+            lng: listing.location.lng,
+          },
+          price: { value: listing.price, unit: listing.priceUnit },
           images: listing.images.map((img, index) => ({ url: img.url, index })),
         }}
       />
-    </main>
+    </div>
   );
 }

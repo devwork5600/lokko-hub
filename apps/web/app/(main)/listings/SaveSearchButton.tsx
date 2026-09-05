@@ -2,9 +2,11 @@
 
 import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { createSavedSearch } from '@/actions/saved-search-actions';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 export function SaveSearchButton() {
   const searchParams = useSearchParams();
@@ -12,7 +14,6 @@ export function SaveSearchButton() {
   const [title, setTitle] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -38,50 +39,55 @@ export function SaveSearchButton() {
       return;
     }
 
-    setSaved(true);
     setOpen(false);
     setTitle('');
-  }
-
-  if (!open) {
-    return (
-      <div className="flex items-center gap-3">
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => {
-            setOpen(true);
-            setSaved(false);
-          }}
-        >
-          Sauvegarder cette recherche
-        </Button>
-        {saved && <p className="text-sm text-muted-foreground">Recherche sauvegardée !</p>}
-      </div>
-    );
+    toast.success('Recherche sauvegardée !');
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-wrap items-center gap-2">
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        placeholder="Nom de la recherche"
-        required
-        className="h-9 rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
-      />
-      <Button type="submit" size="sm" disabled={saving || !title.trim()}>
-        {saving ? 'Enregistrement...' : 'Enregistrer'}
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (next) setError(null);
+      }}
+    >
+      <Button type="button" variant="outline" onClick={() => setOpen(true)}>
+        Sauvegarder cette recherche
       </Button>
-      <Button type="button" variant="ghost" size="sm" onClick={() => setOpen(false)}>
-        Annuler
-      </Button>
-      {error && (
-        <p role="alert" className="w-full text-sm text-destructive">
-          {error}
-        </p>
-      )}
-    </form>
+
+      <DialogContent>
+        <DialogTitle>Sauvegarder cette recherche</DialogTitle>
+
+        <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-3">
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Nom de la recherche"
+            autoFocus
+            required
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+          />
+
+          {error && (
+            <p role="alert" className="text-sm text-destructive">
+              {error}
+            </p>
+          )}
+
+          <div className="mt-2 flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button type="button" variant="outline">
+                Annuler
+              </Button>
+            </DialogClose>
+            <Button type="submit" disabled={saving || !title.trim()}>
+              {saving ? 'Enregistrement...' : 'Enregistrer'}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
   );
 }

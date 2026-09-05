@@ -27,7 +27,7 @@ export function ModeToggle() {
       onClick={toggle}
       aria-label="Changer de thème"
       title="Changer de thème"
-      className="relative flex items-center justify-center text-foreground transition-colors hover:text-primary"
+      className="relative flex cursor-pointer items-center justify-center text-foreground transition-colors hover:text-primary"
     >
       <Sun className={`h-5 w-5 transition-all ${isDark ? 'scale-0 -rotate-90' : 'scale-100 rotate-0'}`} />
       <Moon className={`absolute h-5 w-5 transition-all ${isDark ? 'scale-100 rotate-0' : 'scale-0 rotate-90'}`} />

@@ -127,6 +127,10 @@ describe('updateListing', () => {
       }),
     );
     expect(addJobMock).not.toHaveBeenCalled();
+    // Recreating unchanged image rows would reset their moderation status
+    // (SAFE/NSFW) back to PENDING with no job left to ever re-classify them.
+    expect(prismaMock.listingImage.deleteMany).not.toHaveBeenCalled();
+    expect(prismaMock.listingImage.createMany).not.toHaveBeenCalled();
   });
 
   it('resets status to VERIFICATION and enqueues moderation when the images change', async () => {
@@ -152,5 +156,7 @@ describe('updateListing', () => {
       'listing-job',
       expect.objectContaining({ listingId: 'listing-1', isNew: false }),
     );
+    expect(prismaMock.listingImage.deleteMany).toHaveBeenCalledWith({ where: { listingId: 'listing-1' } });
+    expect(prismaMock.listingImage.createMany).toHaveBeenCalled();
   });
 });
