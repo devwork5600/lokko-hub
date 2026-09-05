@@ -1,11 +1,12 @@
 'use client';
 
-import { TrashIcon } from 'lucide-react';
+import { PencilIcon, TrashIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
-import { deleteSavedSearch } from '@/actions/saved-search-actions';
+import { deleteSavedSearch, updateSavedSearchTitle } from '@/actions/saved-search-actions';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
@@ -44,6 +45,10 @@ export function SavedSearchCard({ search }: { search: SavedSearch }) {
   const router = useRouter();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [renameOpen, setRenameOpen] = useState(false);
+  const [title, setTitle] = useState(search.title);
+  const [renaming, setRenaming] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
 
   async function handleDelete() {
     setDeleting(true);
@@ -52,7 +57,27 @@ export function SavedSearchCard({ search }: { search: SavedSearch }) {
     if (result.success) {
       setConfirmOpen(false);
       router.refresh();
+    } else {
+      toast.error(result.error ?? 'Une erreur est survenue.');
     }
+  }
+
+  async function handleRename(event: React.FormEvent) {
+    event.preventDefault();
+    setRenaming(true);
+    setRenameError(null);
+
+    const result = await updateSavedSearchTitle(search.id, title);
+    setRenaming(false);
+
+    if (!result.success) {
+      setRenameError(result.error ?? 'Une erreur est survenue.');
+      return;
+    }
+
+    setRenameOpen(false);
+    toast.success('Recherche renommée !');
+    router.refresh();
   }
 
   return (
@@ -62,28 +87,78 @@ export function SavedSearchCard({ search }: { search: SavedSearch }) {
         <p className="truncate text-sm text-muted-foreground">{describeSearch(search)}</p>
       </Link>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <Button type="button" variant="ghost" size="icon" onClick={() => setConfirmOpen(true)}>
-          <TrashIcon className="h-4 w-4" />
-        </Button>
+      <div className="flex shrink-0 items-center gap-1">
+        <Dialog
+          open={renameOpen}
+          onOpenChange={(next) => {
+            setRenameOpen(next);
+            if (next) {
+              setTitle(search.title);
+              setRenameError(null);
+            }
+          }}
+        >
+          <Button type="button" variant="ghost" size="icon" onClick={() => setRenameOpen(true)}>
+            <PencilIcon className="h-4 w-4" />
+          </Button>
 
-        <DialogContent>
-          <DialogTitle>Supprimer cette recherche sauvegardée ?</DialogTitle>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Tu ne recevras plus de notifications pour les nouvelles annonces correspondantes.
-          </p>
-          <div className="mt-6 flex justify-end gap-2">
-            <DialogClose asChild>
-              <Button type="button" variant="outline">
-                Annuler
+          <DialogContent>
+            <DialogTitle>Renommer cette recherche</DialogTitle>
+
+            <form onSubmit={handleRename} className="mt-4 flex flex-col gap-3">
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Nom de la recherche"
+                autoFocus
+                required
+                className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
+              />
+
+              {renameError && (
+                <p role="alert" className="text-sm text-destructive">
+                  {renameError}
+                </p>
+              )}
+
+              <div className="mt-2 flex justify-end gap-2">
+                <DialogClose asChild>
+                  <Button type="button" variant="outline">
+                    Annuler
+                  </Button>
+                </DialogClose>
+                <Button type="submit" disabled={renaming || !title.trim()}>
+                  {renaming ? 'Enregistrement...' : 'Renommer'}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <Button type="button" variant="ghost" size="icon" onClick={() => setConfirmOpen(true)}>
+            <TrashIcon className="h-4 w-4" />
+          </Button>
+
+          <DialogContent>
+            <DialogTitle>Supprimer cette recherche sauvegardée ?</DialogTitle>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Tu ne recevras plus de notifications pour les nouvelles annonces correspondantes.
+            </p>
+            <div className="mt-6 flex justify-end gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline">
+                  Annuler
+                </Button>
+              </DialogClose>
+              <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting}>
+                {deleting ? 'Suppression...' : 'Supprimer'}
               </Button>
-            </DialogClose>
-            <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? 'Suppression...' : 'Supprimer'}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     </div>
   );
 }

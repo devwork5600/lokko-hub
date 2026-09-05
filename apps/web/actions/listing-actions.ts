@@ -7,6 +7,7 @@ import { prisma, Prisma } from '@lokko-hub/db';
 import { listingSchema, type ListingDraft } from '@lokko-hub/validations';
 
 import { getUser } from '@/lib/auth/auth-session';
+import { notifyListingStatusChange } from '@/lib/notify-listing-status';
 import { getListingQueue } from '@/lib/queue';
 
 const listingCardSelect = {
@@ -383,6 +384,11 @@ export async function archiveListing(listingId: string) {
   });
   revalidatePath('/account/listings');
   revalidatePath(`/listings/${listingId}`);
+  try {
+    await notifyListingStatusChange(listingId, 'LISTING_ARCHIVED');
+  } catch (err) {
+    console.error('Failed to notify listing archived:', err);
+  }
   return { success: true };
 }
 
@@ -396,6 +402,11 @@ export async function unarchiveListing(listingId: string) {
   });
   revalidatePath('/account/listings');
   revalidatePath(`/listings/${listingId}`);
+  try {
+    await notifyListingStatusChange(listingId, 'LISTING_VALIDATED');
+  } catch (err) {
+    console.error('Failed to notify listing unarchived:', err);
+  }
   return { success: true };
 }
 

@@ -67,7 +67,7 @@ export function UserListingCard({ listing }: { listing: UserListingCardType }) {
           <button
             type="button"
             onClick={() => setConfirmOpen(true)}
-            className="rounded-lg bg-background/80 p-1.5 text-foreground backdrop-blur-sm transition-colors hover:text-destructive"
+            className="cursor-pointer rounded-lg bg-background/80 p-1.5 text-foreground backdrop-blur-sm transition-colors hover:text-destructive"
             aria-label="Supprimer"
           >
             <TrashIcon className="h-4 w-4" />

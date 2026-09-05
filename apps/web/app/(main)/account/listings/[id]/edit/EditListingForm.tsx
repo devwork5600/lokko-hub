@@ -7,29 +7,42 @@ import { useState } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { toast } from 'sonner';
 
+import type { ListingStatus } from '@lokko-hub/db';
 import { listingSchema, type ListingDraft } from '@lokko-hub/validations';
 
 import type { Category } from '@/actions/category-actions';
-import { updateListing } from '@/actions/listing-actions';
+import { archiveListing, unarchiveListing, updateListing } from '@/actions/listing-actions';
 import { ImageUploadField } from '@/app/(main)/listings/ImageUploadField';
 import type { CitySuggestion } from '@/app/api/city/route';
 import { CityAutocomplete } from '@/components/CityAutocomplete';
 import { Button } from '@/components/ui/button';
 
+const statusLabels: Record<ListingStatus, string> = {
+  ACTIVE: 'En ligne',
+  ARCHIVED: 'Archivée',
+  VERIFICATION: 'En vérification',
+  REJECTED: 'Refusée',
+};
+
 export function EditListingForm({
   listingId,
   categories,
   defaultValues,
+  initialStatus,
   rejectionReason,
 }: {
   listingId: string;
   categories: Category[];
   defaultValues: ListingDraft;
+  initialStatus: ListingStatus;
   rejectionReason: string | null;
 }) {
   const router = useRouter();
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState(initialStatus);
+  const [statusPending, setStatusPending] = useState(false);
+  const statusLocked = status === 'VERIFICATION' || status === 'REJECTED';
 
   const form = useForm<ListingDraft>({
     resolver: zodResolver(listingSchema),
@@ -62,6 +75,20 @@ export function EditListingForm({
     router.push(`/listings/${listingId}`);
   }
 
+  async function handleStatusChange(next: 'ACTIVE' | 'ARCHIVED') {
+    setStatusPending(true);
+    const result = next === 'ARCHIVED' ? await archiveListing(listingId) : await unarchiveListing(listingId);
+    setStatusPending(false);
+
+    if (!result.success) {
+      toast.error(result.error ?? 'Une erreur est survenue.');
+      return;
+    }
+
+    setStatus(next);
+    toast.success(next === 'ARCHIVED' ? 'Annonce archivée.' : 'Annonce remise en ligne.');
+  }
+
   return (
     <FormProvider {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="max-w-xl space-y-8">
@@ -71,6 +98,28 @@ export function EditListingForm({
             <p>Cette annonce a été refusée : {rejectionReason}</p>
           </div>
         )}
+
+        <div className="space-y-1.5">
+          <label htmlFor="status" className="text-sm font-medium text-foreground">
+            Statut
+          </label>
+          <select
+            id="status"
+            value={status}
+            disabled={statusLocked || statusPending}
+            onChange={(e) => handleStatusChange(e.target.value as 'ACTIVE' | 'ARCHIVED')}
+            className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value="ACTIVE">{statusLabels.ACTIVE}</option>
+            <option value="ARCHIVED">{statusLabels.ARCHIVED}</option>
+            <option value="VERIFICATION" disabled>
+              {statusLabels.VERIFICATION}
+            </option>
+            <option value="REJECTED" disabled>
+              {statusLabels.REJECTED}
+            </option>
+          </select>
+        </div>
 
         <div className="space-y-1.5">
           <label htmlFor="title" className="text-sm font-medium text-foreground">

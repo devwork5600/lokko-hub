@@ -39,7 +39,7 @@ function SortableImage({ image, onRemove }: { image: ImageItem; onRemove: () => 
         type="button"
         onClick={onRemove}
         aria-label="Retirer l'image"
-        className="absolute top-1.5 right-1.5 z-20 rounded-full bg-foreground/70 p-1.5 text-background transition-colors hover:bg-destructive"
+        className="absolute top-1.5 right-1.5 z-20 cursor-pointer rounded-full bg-foreground/70 p-1.5 text-background transition-colors hover:bg-destructive"
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>

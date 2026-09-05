@@ -3,7 +3,7 @@ import Redis from 'ioredis';
 
 import { prisma } from '@lokko-hub/db';
 
-import { matchSavedSearches } from './notifications';
+import { matchSavedSearches, notifyListingStatusChange } from './notifications';
 
 // Same normalization as apps/web/lib/redis.ts. Upstash hands out plain redis://
 // connection strings that still require TLS — connecting without upgrading to
@@ -111,6 +111,12 @@ export async function processListingJob({ listingId, images, isNew }: ListingJob
   });
 
   console.log(`[moderation] listing ${listingId} -> ${hasNsfw ? 'REJECTED' : 'ACTIVE'}`);
+
+  try {
+    await notifyListingStatusChange(listingId, hasNsfw ? 'LISTING_REJECTED' : 'LISTING_VALIDATED');
+  } catch (err) {
+    console.error(`[moderation] owner notification failed for ${listingId}:`, err);
+  }
 
   // Only check saved searches for genuinely new listings — re-moderation on an
   // edit (isNew: false) shouldn't re-notify everyone who already saw this listing.

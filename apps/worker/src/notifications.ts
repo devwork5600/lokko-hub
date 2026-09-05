@@ -4,6 +4,45 @@ import { sendListingMatchEmail } from './email';
 import { haversineDistanceKm } from './geo';
 import { broadcastToUser } from './socket-broadcast';
 
+// Notifies a listing's owner that moderation resolved it — approved or
+// rejected. Upserts on (userId, listingId, type) so a listing re-moderated
+// after an edit refreshes the same notification to unread rather than piling
+// up duplicates.
+export async function notifyListingStatusChange(
+  listingId: string,
+  type: 'LISTING_VALIDATED' | 'LISTING_REJECTED',
+): Promise<void> {
+  const listing = await prisma.listing.findUnique({
+    where: { id: listingId },
+    select: {
+      id: true,
+      title: true,
+      ownerId: true,
+      rejectionReason: true,
+      images: { orderBy: { index: 'asc' }, take: 1, select: { url: true } },
+    },
+  });
+  if (!listing) return;
+
+  const payload = {
+    listingId: listing.id,
+    listingTitle: listing.title,
+    listingImage: listing.images[0]?.url ?? null,
+    ...(type === 'LISTING_REJECTED' ? { rejectionReason: listing.rejectionReason } : {}),
+  };
+
+  await prisma.notification.upsert({
+    where: { userId_listingId_type: { userId: listing.ownerId, listingId: listing.id, type } },
+    create: { userId: listing.ownerId, listingId: listing.id, type, payload },
+    update: { payload, read: false, createdAt: new Date() },
+  });
+
+  await broadcastToUser(listing.ownerId, 'notification:new', payload).catch(() => ({
+    success: false,
+    online: false,
+  }));
+}
+
 export async function matchSavedSearches(listingId: string): Promise<void> {
   const listing = await prisma.listing.findUnique({
     where: { id: listingId },

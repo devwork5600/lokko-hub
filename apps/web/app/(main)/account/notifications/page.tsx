@@ -1,53 +1,31 @@
-import Image from 'next/image';
-import Link from 'next/link';
-
 import { getUserNotifications, markNotificationsAsRead } from '@/actions/notification-actions';
+import { NotificationCard } from '@/components/NotificationCard';
 import { SyncNotificationBadge } from '@/components/SyncNotificationBadge';
 import { getUser } from '@/lib/auth/auth-session';
 
 export default async function NotificationsPage() {
   const user = await getUser();
   if (!user) {
-    return (
-      <main>
-        <p>Connecte-toi pour voir tes notifications.</p>
-      </main>
-    );
+    return <p className="text-sm text-muted-foreground">Connecte-toi pour voir tes notifications.</p>;
   }
 
   const notifications = await getUserNotifications();
   await markNotificationsAsRead();
 
   return (
-    <main>
+    <div>
       <SyncNotificationBadge />
-      <h1>Notifications</h1>
+      <h1 className="mb-6 text-xl font-semibold text-foreground">Notifications</h1>
 
       {notifications.length === 0 ? (
-        <p>Aucune notification pour le moment.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">Aucune notification pour le moment.</p>
       ) : (
-        <ul>
-          {notifications.map((notification) => {
-            const payload = notification.payload as {
-              listingId: string;
-              listingTitle: string;
-              listingImage: string | null;
-            };
-
-            return (
-              <li key={notification.id}>
-                <Link href={`/listings/${payload.listingId}`}>
-                  {payload.listingImage && (
-                    <Image src={payload.listingImage} alt="" width={60} height={60} />
-                  )}
-                  Nouvelle annonce : {payload.listingTitle}
-                  {!notification.read && <span> (nouveau)</span>}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+        <div className="space-y-3">
+          {notifications.map((notification) => (
+            <NotificationCard key={notification.id} notification={notification} />
+          ))}
+        </div>
       )}
-    </main>
+    </div>
   );
 }
