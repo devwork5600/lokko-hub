@@ -9,7 +9,7 @@ export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
 
   return (
     <Link href={`/listings/${listing.id}`}>
-      <article className="group mr-6 flex h-full w-44 flex-col overflow-hidden rounded-xl bg-background lg:w-52">
+      <article className="group flex h-full w-44 flex-col overflow-hidden rounded-xl bg-background lg:w-52">
         <div className="flex items-center gap-1.5 py-1">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
             {listing.owner.name?.charAt(0).toUpperCase() ?? '?'}
