@@ -1,8 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+class PrismaClientKnownRequestError extends Error {
+  code: string;
+  constructor(code: string) {
+    super('mock prisma error');
+    this.code = code;
+  }
+}
+
 const prismaMock = {
   savedSearch: {
     create: vi.fn(),
+    findFirst: vi.fn(),
     findMany: vi.fn(),
     deleteMany: vi.fn(),
   },
@@ -10,6 +19,7 @@ const prismaMock = {
 
 vi.mock('@lokko-hub/db', () => ({
   prisma: prismaMock,
+  Prisma: { PrismaClientKnownRequestError },
 }));
 
 vi.mock('@/lib/auth/auth-session', () => ({
@@ -46,6 +56,7 @@ describe('createSavedSearch', () => {
   it('stores geo filters alongside category and text query', async () => {
     const { getUser } = await import('@/lib/auth/auth-session');
     vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst.mockResolvedValue(null);
     prismaMock.savedSearch.create.mockResolvedValue({ id: 'search-1' });
 
     const { createSavedSearch } = await import('./saved-search-actions');
@@ -58,6 +69,10 @@ describe('createSavedSearch', () => {
       geoRadiusKm: 10,
     });
 
+    expect(prismaMock.savedSearch.findFirst).toHaveBeenCalledWith({
+      where: { userId: 'user-1', title: { equals: 'Tomates près de Nantes', mode: 'insensitive' } },
+      select: { id: true },
+    });
     expect(prismaMock.savedSearch.create).toHaveBeenCalledWith({
       data: {
         userId: 'user-1',
@@ -69,6 +84,36 @@ describe('createSavedSearch', () => {
         geoRadiusKm: 10,
       },
       select: { id: true },
+    });
+  });
+
+  it('rejects a title that already exists for this user (case-insensitive)', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst.mockResolvedValue({ id: 'existing-search' });
+
+    const { createSavedSearch } = await import('./saved-search-actions');
+    const result = await createSavedSearch({ title: 'tomates près de nantes' });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Tu as déjà une recherche sauvegardée avec ce nom.',
+    });
+    expect(prismaMock.savedSearch.create).not.toHaveBeenCalled();
+  });
+
+  it('reports a friendly error if a concurrent save races past the duplicate check', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.savedSearch.findFirst.mockResolvedValue(null);
+    prismaMock.savedSearch.create.mockRejectedValue(new PrismaClientKnownRequestError('P2002'));
+
+    const { createSavedSearch } = await import('./saved-search-actions');
+    const result = await createSavedSearch({ title: 'Tomates près de Nantes' });
+
+    expect(result).toEqual({
+      success: false,
+      error: 'Tu as déjà une recherche sauvegardée avec ce nom.',
     });
   });
 });

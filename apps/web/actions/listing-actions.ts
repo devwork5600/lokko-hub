@@ -165,24 +165,32 @@ export async function getListingById(id: string) {
 
 export type ListingDetail = NonNullable<Awaited<ReturnType<typeof getListingById>>>;
 
-export async function getUserListings() {
-  const user = await getUser();
-  if (!user) return [];
+const userListingCardSelect = {
+  ...listingCardSelect,
+  status: true,
+} satisfies Prisma.ListingSelect;
 
-  return prisma.listing.findMany({
-    where: { ownerId: user.id, deletedAt: null },
-    orderBy: { createdAt: 'desc' },
-    select: {
-      id: true,
-      title: true,
-      price: true,
-      priceUnit: true,
-      status: true,
-      createdAt: true,
-      category: { select: { name: true, slug: true } },
-      images: { orderBy: { index: 'asc' }, take: 1, select: { url: true, altText: true } },
-    },
-  });
+export type UserListingCard = Prisma.ListingGetPayload<{ select: typeof userListingCardSelect }>;
+
+export async function getUserListings({ page = 1, pageSize = 8 }: { page?: number; pageSize?: number } = {}) {
+  const user = await getUser();
+  if (!user) return { listings: [], hasMore: false, total: 0 };
+
+  const skip = (page - 1) * pageSize;
+  const where: Prisma.ListingWhereInput = { ownerId: user.id, deletedAt: null };
+
+  const [total, listings] = await Promise.all([
+    prisma.listing.count({ where }),
+    prisma.listing.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: pageSize,
+      select: userListingCardSelect,
+    }),
+  ]);
+
+  return { listings, hasMore: skip + listings.length < total, total };
 }
 
 // Never mutates an existing Location row: two listings can end up pointing at
@@ -308,7 +316,9 @@ export async function updateListing(
   // to a new index, and upserting-by-index would overwrite whatever row already held
   // that index instead of the row that actually owns the url — leaving stale
   // duplicate rows behind (a real bug found in lokko-v4). Delete-then-recreate has
-  // no such ambiguity.
+  // no such ambiguity. But only do this when images actually changed — recreating
+  // unchanged rows wipes their moderation `status` back to PENDING for no reason,
+  // with nothing left to ever re-classify them since no job gets enqueued below.
   await prisma.$transaction([
     prisma.listing.update({
       where: { id: listingId },
@@ -324,10 +334,14 @@ export async function updateListing(
         ...(imagesChanged ? { status: 'VERIFICATION', rejectionReason: null } : {}),
       },
     }),
-    prisma.listingImage.deleteMany({ where: { listingId } }),
-    prisma.listingImage.createMany({
-      data: images.map((img) => ({ listingId, url: img.url, index: img.index })),
-    }),
+    ...(imagesChanged
+      ? [
+          prisma.listingImage.deleteMany({ where: { listingId } }),
+          prisma.listingImage.createMany({
+            data: images.map((img) => ({ listingId, url: img.url, index: img.index })),
+          }),
+        ]
+      : []),
   ]);
 
   if (imagesChanged) {

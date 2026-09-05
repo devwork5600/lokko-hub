@@ -1,6 +1,6 @@
 'use server';
 
-import { prisma } from '@lokko-hub/db';
+import { Prisma, prisma } from '@lokko-hub/db';
 import { savedSearchSchema, type SavedSearchInput } from '@lokko-hub/validations';
 
 import { getUser } from '@/lib/auth/auth-session';
@@ -18,20 +18,36 @@ export async function createSavedSearch(
 
   const { title, query, category, geoLat, geoLng, geoRadiusKm } = validation.data;
 
-  const created = await prisma.savedSearch.create({
-    data: {
-      userId: user.id,
-      title,
-      query: query || null,
-      category: category || null,
-      geoLat,
-      geoLng,
-      geoRadiusKm,
-    },
+  const existing = await prisma.savedSearch.findFirst({
+    where: { userId: user.id, title: { equals: title, mode: 'insensitive' } },
     select: { id: true },
   });
+  if (existing) {
+    return { success: false, error: 'Tu as déjà une recherche sauvegardée avec ce nom.' };
+  }
 
-  return { success: true, savedSearchId: created.id };
+  try {
+    const created = await prisma.savedSearch.create({
+      data: {
+        userId: user.id,
+        title,
+        query: query || null,
+        category: category || null,
+        geoLat,
+        geoLng,
+        geoRadiusKm,
+      },
+      select: { id: true },
+    });
+
+    return { success: true, savedSearchId: created.id };
+  } catch (error) {
+    // Race: two concurrent saves with the same title slipped past the check above.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+      return { success: false, error: 'Tu as déjà une recherche sauvegardée avec ce nom.' };
+    }
+    throw error;
+  }
 }
 
 export async function getUserSavedSearches() {

@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { QueryProvider } from '@/components/QueryProvider';
 import { SocketProvider } from '@/components/SocketProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { Toaster } from '@/components/ui/sonner';
 
 import './globals.css';
 
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <QueryProvider>
             <SocketProvider>{children}</SocketProvider>
           </QueryProvider>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

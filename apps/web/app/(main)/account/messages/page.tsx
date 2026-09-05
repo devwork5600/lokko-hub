@@ -1,46 +1,28 @@
-import Image from 'next/image';
-import Link from 'next/link';
-
 import { getUserConversations } from '@/actions/messages-actions';
+import { ConversationCard } from '@/components/ConversationCard';
 import { getUser } from '@/lib/auth/auth-session';
 
 export default async function MessagesPage() {
   const user = await getUser();
   if (!user) {
-    return (
-      <main>
-        <p>Connecte-toi pour voir tes messages.</p>
-      </main>
-    );
+    return <p className="text-sm text-muted-foreground">Connecte-toi pour voir tes messages.</p>;
   }
 
   const conversations = await getUserConversations();
 
   return (
-    <main>
-      <h1>Messages</h1>
+    <div>
+      <h1 className="mb-6 text-xl font-semibold text-foreground">Messages</h1>
 
       {conversations.length === 0 ? (
-        <p>Aucune conversation pour le moment.</p>
+        <p className="py-12 text-center text-sm text-muted-foreground">Aucune conversation pour le moment.</p>
       ) : (
-        <ul>
+        <div className="space-y-3">
           {conversations.map((conversation) => (
-            <li key={conversation.id}>
-              <Link href={`/account/messages/${conversation.id}`}>
-                {conversation.listingImage && (
-                  <Image src={conversation.listingImage} alt="" width={60} height={60} />
-                )}
-                <strong>{conversation.otherUser.name || 'Un utilisateur'}</strong>
-                {' — '}
-                {conversation.listingTitle}
-                {' — '}
-                {conversation.lastMessagePreview ?? 'Nouvelle conversation'}
-                {conversation.unreadCount > 0 && <span> ({conversation.unreadCount} non lu)</span>}
-              </Link>
-            </li>
+            <ConversationCard key={conversation.id} conversation={conversation} />
           ))}
-        </ul>
+        </div>
       )}
-    </main>
+    </div>
   );
 }
