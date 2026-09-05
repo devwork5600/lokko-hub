@@ -13,7 +13,7 @@ export function ListingCarousel({ listings }: { listings: ListingCard[] }) {
       <Carousel opts={{ align: 'start', dragFree: true }} className="w-full">
         <CarouselContent>
           {listings.map((listing) => (
-            <CarouselItem key={listing.id} className="shrink-0 basis-[170px] lg:basis-[200px]">
+            <CarouselItem key={listing.id} className="basis-48 lg:basis-56">
               <ListingCarouselCard listing={listing} />
             </CarouselItem>
           ))}
