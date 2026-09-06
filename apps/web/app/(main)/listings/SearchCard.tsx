@@ -37,7 +37,7 @@ export function SearchCard({ listing }: { listing: ListingCardType }) {
               fill
               quality={50}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-              className={`object-cover transition-all duration-500 group-hover:scale-105 ${
+              className={`transform-gpu object-cover transition-all duration-500 will-change-transform group-hover:scale-105 ${
                 loaded ? 'opacity-100' : 'opacity-0'
               }`}
               onLoad={() => setLoaded(true)}
