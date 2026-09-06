@@ -1,15 +1,28 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRef } from 'react';
 
 import type { ListingCard as ListingCardType } from '@/actions/listing-actions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { preloadListingImages } from '@/lib/preload-listing-images';
 
 export function SearchCard({ listing }: { listing: ListingCardType }) {
   const image = listing.images[0];
+  const hasPreloaded = useRef(false);
+
+  function handlePreload() {
+    if (hasPreloaded.current) return;
+    hasPreloaded.current = true;
+    preloadListingImages(listing.images.map((img) => img.url));
+  }
 
   return (
     <Link
       href={`/listings/${listing.id}`}
+      onMouseEnter={handlePreload}
+      onTouchStart={handlePreload}
       className="group block overflow-hidden rounded-xl border border-border shadow-sm transition-shadow hover:shadow-md"
     >
       <div className="relative aspect-4/5 w-full overflow-hidden bg-muted">

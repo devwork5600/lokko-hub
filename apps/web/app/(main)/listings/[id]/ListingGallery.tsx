@@ -4,6 +4,7 @@ import { Check, ChevronLeft, ChevronRight, Images, Share2, X } from 'lucide-reac
 import Image from 'next/image';
 import { useState } from 'react';
 
+import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 
 type ImageItem = { url: string; altText: string | null };
@@ -11,6 +12,8 @@ type ImageItem = { url: string; altText: string | null };
 export function ListingGallery({ images, title }: { images: ImageItem[]; title: string }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
+  const [desktopLoadedCount, setDesktopLoadedCount] = useState(0);
+  const [mobileLoaded, setMobileLoaded] = useState(false);
 
   if (images.length === 0) {
     return (
@@ -36,6 +39,7 @@ export function ListingGallery({ images, title }: { images: ImageItem[]; title: 
 
   const desktopImages = images.slice(0, 3);
   const activeImage = lightboxIndex !== null ? images[lightboxIndex] : null;
+  const desktopAllLoaded = desktopLoadedCount >= desktopImages.length;
 
   return (
     <div className="relative">
@@ -48,12 +52,17 @@ export function ListingGallery({ images, title }: { images: ImageItem[]; title: 
             onClick={() => setLightboxIndex(index)}
             className="group relative h-full flex-1 cursor-pointer overflow-hidden"
           >
+            {!desktopAllLoaded && <ImageSkeleton />}
             <Image
               src={image.url}
               alt={image.altText ?? title}
               fill
+              priority={index === 0}
               sizes="33vw"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              className={`object-cover transition-all duration-500 group-hover:scale-105 ${
+                desktopAllLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setDesktopLoadedCount((count) => count + 1)}
             />
           </button>
         ))}
@@ -76,7 +85,16 @@ export function ListingGallery({ images, title }: { images: ImageItem[]; title: 
         onClick={() => setLightboxIndex(0)}
         className="relative block h-64 w-full overflow-hidden rounded-xl lg:hidden"
       >
-        <Image src={images[0].url} alt={images[0].altText ?? title} fill sizes="100vw" className="object-cover" />
+        {!mobileLoaded && <ImageSkeleton />}
+        <Image
+          src={images[0].url}
+          alt={images[0].altText ?? title}
+          fill
+          priority
+          sizes="100vw"
+          className={`object-cover transition-opacity duration-500 ${mobileLoaded ? 'opacity-100' : 'opacity-0'}`}
+          onLoad={() => setMobileLoaded(true)}
+        />
         {images.length > 1 && (
           <span className="absolute right-3 bottom-3 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs text-white">
             <Images className="h-3.5 w-3.5" />
