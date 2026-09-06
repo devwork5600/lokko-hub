@@ -21,7 +21,9 @@ const listingCardSelect = {
   subCategory: { select: { name: true, slug: true } },
   product: { select: { name: true, slug: true } },
   owner: { select: { id: true, name: true, image: true } },
-  images: { orderBy: { index: 'asc' }, take: 1, select: { url: true, altText: true } },
+  // take: 3, not 1 — the card only renders images[0], but the extra two (tiny url
+  // strings, no bytes downloaded) let hover/touch preload the listing's next photos.
+  images: { orderBy: { index: 'asc' }, take: 3, select: { url: true, altText: true } },
 } satisfies Prisma.ListingSelect;
 
 export type ListingCard = Prisma.ListingGetPayload<{ select: typeof listingCardSelect }>;

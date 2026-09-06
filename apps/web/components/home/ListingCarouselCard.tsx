@@ -1,14 +1,25 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRef } from 'react';
 
 import type { ListingCard } from '@/actions/listing-actions';
 import { formatRelativeDate } from '@/lib/format-relative-date';
+import { preloadListingImages } from '@/lib/preload-listing-images';
 
 export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
   const image = listing.images[0];
+  const hasPreloaded = useRef(false);
+
+  function handlePreload() {
+    if (hasPreloaded.current) return;
+    hasPreloaded.current = true;
+    preloadListingImages(listing.images.map((img) => img.url));
+  }
 
   return (
-    <Link href={`/listings/${listing.id}`}>
+    <Link href={`/listings/${listing.id}`} onMouseEnter={handlePreload} onTouchStart={handlePreload}>
       <article className="group flex h-full w-44 flex-col overflow-hidden rounded-xl bg-background lg:w-52">
         <div className="flex items-center gap-1.5 py-1">
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
@@ -23,7 +34,7 @@ export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
               src={image.url}
               alt={image.altText ?? listing.title}
               fill
-              sizes="(max-width: 768px) 80vw, 25vw"
+              sizes="(min-width: 1024px) 208px, 176px"
               className="object-cover transition-transform duration-300 group-hover:scale-105"
             />
           ) : (

@@ -9,6 +9,10 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
       { protocol: 'https', hostname: 'avatars.githubusercontent.com' },
     ],
+    // 75 is the default quality used everywhere; 50 is only for the low-priority
+    // hover/touch preload requests (lib/preload-listing-images.ts) — Next.js 16
+    // rejects any `q` value not explicitly allow-listed here.
+    qualities: [50, 75],
   },
 };
 
