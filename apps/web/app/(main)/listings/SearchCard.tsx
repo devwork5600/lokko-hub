@@ -47,9 +47,9 @@ export function SearchCard({ listing }: { listing: ListingCardType }) {
         )}
       </div>
       <div className="p-2">
-        <h3 className="line-clamp-1 text-sm font-medium text-foreground group-hover:text-primary">
+        <h2 className="line-clamp-1 text-sm font-medium text-foreground group-hover:text-primary">
           {listing.title}
-        </h3>
+        </h2>
         <p className="text-sm font-semibold text-foreground">
           {listing.price} €{listing.priceUnit !== 'UNIT' ? `/${listing.priceUnit.toLowerCase()}` : ''}
         </p>

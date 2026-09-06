@@ -16,9 +16,9 @@ export const metadata: Metadata = {
 export default async function HomePage() {
   const [user, categories] = await Promise.all([getUser(), getCategories()]);
 
-  const [fruitsLegumes, produitsAnimaux, boissons, epicerie] = await Promise.all([
+  const [fruitsLegumes, produitsArtisanaux, boissons, epicerie] = await Promise.all([
     getListings({ pageSize: 12, category: 'fruits-legumes' }),
-    getListings({ pageSize: 12, category: 'produits-animaux' }),
+    getListings({ pageSize: 12, category: 'produits-artisanaux' }),
     getListings({ pageSize: 12, category: 'boissons' }),
     getListings({ pageSize: 12, category: 'epicerie' }),
   ]);
@@ -36,9 +36,9 @@ export default async function HomePage() {
         href="/listings?category=fruits-legumes"
       />
       <ListingsSection
-        title="Produits animaux"
-        listings={produitsAnimaux.listings}
-        href="/listings?category=produits-animaux"
+        title="Produits artisanaux"
+        listings={produitsArtisanaux.listings}
+        href="/listings?category=produits-artisanaux"
       />
 
       <div className="my-12">

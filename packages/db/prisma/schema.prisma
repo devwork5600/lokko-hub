@@ -43,6 +43,7 @@ model User {
 
   savedSearches SavedSearch[]
   notifications Notification[]
+  bookmarks     Bookmark[]
 
   @@map("user")
 }
@@ -73,11 +74,11 @@ model Account {
 
   accessToken           String?
   refreshToken          String?
-  idToken                String?
+  idToken               String?
   accessTokenExpiresAt  DateTime?
   refreshTokenExpiresAt DateTime?
-  scope                  String?
-  password               String?
+  scope                 String?
+  password              String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -193,13 +194,14 @@ model Listing {
   productId     String?
   locationId    String
 
-  owner       User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  category    Category  @relation("ListingCategory", fields: [categoryId], references: [id])
-  subCategory Category? @relation("ListingSubCategory", fields: [subCategoryId], references: [id])
-  product     Product?  @relation(fields: [productId], references: [id])
-  location    Location  @relation(fields: [locationId], references: [id])
+  owner         User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  category      Category       @relation("ListingCategory", fields: [categoryId], references: [id])
+  subCategory   Category?      @relation("ListingSubCategory", fields: [subCategoryId], references: [id])
+  product       Product?       @relation(fields: [productId], references: [id])
+  location      Location       @relation(fields: [locationId], references: [id])
   images        ListingImage[]
   conversations Conversation[] @relation("ListingToConversation")
+  bookmarks     Bookmark[]
 
   @@index([categoryId, status])
   @@index([locationId])
@@ -373,4 +375,24 @@ model Notification {
   @@unique([userId, listingId, type])
   @@index([userId, read])
   @@map("notification")
+}
+
+//
+// ==========================
+// BOOKMARKS
+// ==========================
+//
+
+model Bookmark {
+  userId    String
+  listingId String
+
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  listing Listing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+
+  @@id([userId, listingId])
+  @@index([listingId])
+  @@map("bookmark")
 }

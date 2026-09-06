@@ -1,19 +1,32 @@
 'use client';
 
-import { Check, ChevronLeft, ChevronRight, Images, Share2, X } from 'lucide-react';
+import { Check, ChevronLeft, ChevronRight, Heart, Images, Share2, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
 import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useBookmark } from '@/hooks/use-bookmark';
+import { cn } from '@/lib/utils';
 
 type ImageItem = { url: string; altText: string | null };
 
-export function ListingGallery({ images, title }: { images: ImageItem[]; title: string }) {
+export function ListingGallery({
+  images,
+  title,
+  listingId,
+  initialBookmarked,
+}: {
+  images: ImageItem[];
+  title: string;
+  listingId: string;
+  initialBookmarked: boolean;
+}) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [copied, setCopied] = useState(false);
   const [desktopLoadedCount, setDesktopLoadedCount] = useState(0);
   const [mobileLoaded, setMobileLoaded] = useState(false);
+  const { bookmarked, toggle, isLoading } = useBookmark(listingId, initialBookmarked);
 
   if (images.length === 0) {
     return (
@@ -103,15 +116,28 @@ export function ListingGallery({ images, title }: { images: ImageItem[]; title: 
         )}
       </button>
 
-      <button
-        type="button"
-        onClick={handleShare}
-        aria-label="Copier le lien de l'annonce"
-        title="Copier le lien"
-        className="absolute top-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-black shadow-md transition-colors hover:bg-white"
-      >
-        {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-      </button>
+      <div className="absolute top-3 right-3 z-10 flex gap-2">
+        <button
+          type="button"
+          onClick={() => toggle()}
+          disabled={isLoading}
+          aria-label={bookmarked ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          aria-pressed={bookmarked}
+          title={bookmarked ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-black shadow-md transition-colors hover:bg-white"
+        >
+          <Heart className={cn('h-4 w-4', bookmarked && 'fill-red-500 text-red-500')} />
+        </button>
+        <button
+          type="button"
+          onClick={handleShare}
+          aria-label="Copier le lien de l'annonce"
+          title="Copier le lien"
+          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-black shadow-md transition-colors hover:bg-white"
+        >
+          {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
+        </button>
+      </div>
 
       <Dialog open={lightboxIndex !== null} onOpenChange={(open) => !open && setLightboxIndex(null)}>
         <DialogContent fullscreen showCloseButton={false} className="flex items-center justify-center">

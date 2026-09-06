@@ -51,8 +51,11 @@ export function CategoryFilter() {
   return (
     <div className="space-y-4">
       <div className="space-y-1.5">
-        <label className="text-sm font-medium text-foreground">Catégorie</label>
+        <label htmlFor="category" className="text-sm font-medium text-foreground">
+          Catégorie
+        </label>
         <select
+          id="category"
           value={categorySlug}
           onChange={(e) => updateParams({ category: e.target.value })}
           className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
@@ -68,8 +71,11 @@ export function CategoryFilter() {
 
       {subcategories.length > 0 && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Sous-catégorie</label>
+          <label htmlFor="subCategory" className="text-sm font-medium text-foreground">
+            Sous-catégorie
+          </label>
           <select
+            id="subCategory"
             value={subCategorySlug}
             onChange={(e) => updateParams({ subCategory: e.target.value })}
             className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"
@@ -86,8 +92,11 @@ export function CategoryFilter() {
 
       {products.length > 0 && (
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-foreground">Produit</label>
+          <label htmlFor="product" className="text-sm font-medium text-foreground">
+            Produit
+          </label>
           <select
+            id="product"
             value={productSlug}
             onChange={(e) => updateParams({ product: e.target.value })}
             className="h-10 w-full rounded-lg border border-border bg-background px-3 text-sm text-foreground outline-none focus:border-primary"

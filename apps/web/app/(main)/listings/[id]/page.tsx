@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getListingById } from '@/actions/listing-actions';
+import { getListingById, isBookmarked } from '@/actions/listing-actions';
 import { LeafletMap } from '@/components/LeafletMapClient';
 import { getUser } from '@/lib/auth/auth-session';
 
@@ -52,7 +52,7 @@ export default async function ListingDetailPage({
   const listing = await getListingById(id);
   if (!listing) notFound();
 
-  const user = await getUser();
+  const [user, initialBookmarked] = await Promise.all([getUser(), isBookmarked(id)]);
   const isOwner = user?.id === listing.ownerId;
 
   return (
@@ -77,7 +77,12 @@ export default async function ListingDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[6fr_2fr]">
         <div className="flex flex-col gap-6">
-          <ListingGallery images={listing.images} title={listing.title} />
+          <ListingGallery
+            images={listing.images}
+            title={listing.title}
+            listingId={listing.id}
+            initialBookmarked={initialBookmarked}
+          />
 
           <ListingInfoCard
             title={listing.title}
