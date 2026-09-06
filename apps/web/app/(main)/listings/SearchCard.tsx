@@ -2,15 +2,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import type { ListingCard as ListingCardType } from '@/actions/listing-actions';
+import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
 import { preloadListingImages } from '@/lib/preload-listing-images';
 
 export function SearchCard({ listing }: { listing: ListingCardType }) {
   const image = listing.images[0];
   const hasPreloaded = useRef(false);
+  const [loaded, setLoaded] = useState(false);
 
   function handlePreload() {
     if (hasPreloaded.current) return;
@@ -27,13 +29,19 @@ export function SearchCard({ listing }: { listing: ListingCardType }) {
     >
       <div className="relative aspect-4/5 w-full overflow-hidden bg-muted">
         {image ? (
-          <Image
-            src={image.url}
-            alt={image.altText ?? listing.title}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-            className="object-cover transition-transform group-hover:scale-105"
-          />
+          <>
+            {!loaded && <ImageSkeleton />}
+            <Image
+              src={image.url}
+              alt={image.altText ?? listing.title}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+              className={`object-cover transition-all duration-500 group-hover:scale-105 ${
+                loaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setLoaded(true)}
+            />
+          </>
         ) : (
           <div className="flex h-full items-center justify-center text-xs text-muted-foreground">Aucune image</div>
         )}

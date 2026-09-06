@@ -15,22 +15,9 @@ export function FilterTriggers() {
 
   return (
     <div className="my-8 flex flex-wrap items-center gap-3">
-      <div className="hidden gap-3 lg:flex">
-        <Button type="button" onClick={() => setOpen(true)}>
-          Où ?
-        </Button>
-        <Button type="button" onClick={() => setOpen(true)}>
-          Quoi ?
-        </Button>
-        <Button type="button" onClick={() => setOpen(true)}>
-          Combien ?
-        </Button>
-      </div>
-      <div className="lg:hidden">
-        <Button type="button" onClick={() => setOpen(true)}>
-          Filtres
-        </Button>
-      </div>
+      <Button type="button" onClick={() => setOpen(true)}>
+        Filtres
+      </Button>
 
       {hasActiveFilters && <SaveSearchButton />}
 

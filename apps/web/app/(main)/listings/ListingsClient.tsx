@@ -10,7 +10,7 @@ import { parseSearchParams } from '@/lib/parse-search-params';
 
 import { SearchCard, SearchCardSkeleton } from './SearchCard';
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 16;
 
 export function ListingsClient() {
   const searchParams = useSearchParams();
