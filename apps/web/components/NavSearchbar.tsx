@@ -1,8 +1,8 @@
 'use client';
 
-import { Search } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
+import { Search, X } from 'lucide-react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 import type { SearchSuggestion } from '@/app/api/search/suggestions/route';
 import { getRecentSearches, saveRecentSearch, type RecentSearch } from '@/lib/recent-searches';
@@ -34,13 +34,24 @@ export function NavSearchbar({
   onNavigate?: () => void;
 }) {
   const router = useRouter();
-  const [value, setValue] = useState('');
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const currentQuery = searchParams.get('q') ?? '';
+  const [value, setValue] = useState(currentQuery);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [recentSearches, setRecentSearches] = useState<RecentSearch[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const isEditingRef = useRef(false);
+
+  // Keep the field in sync with the URL's q= (saved search links, sidebar
+  // navigation, browser back/forward) — but never while the user is actively
+  // typing/interacting, or their in-progress input would get clobbered.
+  useEffect(() => {
+    if (!isEditingRef.current) setValue(currentQuery);
+  }, [currentQuery]);
 
   const displayedSuggestions = suggestions.slice(0, MAX_SUGGESTIONS);
   const items = [...displayedSuggestions, ...recentSearches];
@@ -66,17 +77,38 @@ export function NavSearchbar({
   }
 
   function handleFocus() {
+    isEditingRef.current = true;
     setRecentSearches(getRecentSearches());
     setOpen(true);
   }
 
+  function handleBlur() {
+    isEditingRef.current = false;
+    setTimeout(() => setOpen(false), 150);
+  }
+
   function navigateTo(suggestion: SearchSuggestion) {
     saveRecentSearch(suggestion);
+    isEditingRef.current = false;
     setOpen(false);
-    setValue('');
+    setValue(suggestion.query ?? '');
     setSuggestions([]);
     router.push(buildHref(suggestion));
     onNavigate?.();
+  }
+
+  function handleClear() {
+    isEditingRef.current = false;
+    setValue('');
+    setSuggestions([]);
+    setOpen(false);
+
+    if (currentQuery) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('q');
+      const qs = params.toString();
+      router.push(qs ? `${pathname}?${qs}` : pathname);
+    }
   }
 
   function handleSubmit(event: FormEvent) {
@@ -85,6 +117,7 @@ export function NavSearchbar({
       navigateTo(items[activeIndex]);
       return;
     }
+    isEditingRef.current = false;
     setOpen(false);
     onNavigate?.();
     router.push(value ? `/listings?q=${encodeURIComponent(value)}` : '/listings');
@@ -114,14 +147,25 @@ export function NavSearchbar({
         value={value}
         onChange={(e) => handleChange(e.target.value)}
         onFocus={handleFocus}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={cn(
           'h-9 w-full rounded-lg border border-border bg-background pr-3 pl-9 text-sm outline-none focus:border-primary',
+          value && 'pr-8',
           inputClassName,
         )}
       />
+      {value && (
+        <button
+          type="button"
+          onClick={handleClear}
+          aria-label="Effacer la recherche"
+          className="absolute top-1/2 right-2.5 -translate-y-1/2 rounded-sm text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <X className="h-4 w-4" />
+        </button>
+      )}
 
       {open && (showSuggestionsSection || showRecentSection) && (
         <div className="absolute z-20 mt-2 w-full rounded-md border border-border bg-background shadow-lg">
