@@ -35,6 +35,7 @@ export function SearchCard({ listing }: { listing: ListingCardType }) {
               src={image.url}
               alt={image.altText ?? listing.title}
               fill
+              quality={50}
               sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               className={`object-cover transition-all duration-500 group-hover:scale-105 ${
                 loaded ? 'opacity-100' : 'opacity-0'
