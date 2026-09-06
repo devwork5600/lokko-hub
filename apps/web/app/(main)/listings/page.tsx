@@ -1,7 +1,15 @@
+import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
 import { FilterTriggers } from './FilterTriggers';
 import { ListingsClient } from './ListingsClient';
+
+export const metadata: Metadata = {
+  title: 'Annonces',
+  // Canonicalize every filter/search combination to the clean listing page
+  // instead of letting query-string variants compete as duplicate content.
+  alternates: { canonical: '/listings' },
+};
 
 export default function ListingsPage() {
   return (
