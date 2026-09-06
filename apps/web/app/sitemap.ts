@@ -4,6 +4,10 @@ import { prisma } from '@lokko-hub/db';
 
 const SITE_URL = 'https://lokkohub.com';
 
+// Force per-request rendering instead of build-time prerendering: the build
+// step (including CI) doesn't have a real DATABASE_URL to query listings with.
+export const dynamic = 'force-dynamic';
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const listings = await prisma.listing.findMany({
     where: { status: 'ACTIVE', deletedAt: null },
