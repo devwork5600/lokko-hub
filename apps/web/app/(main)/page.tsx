@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 import { getCategories } from '@/actions/category-actions';
 import { getListings } from '@/actions/listing-actions';
 import { BrandBanner } from '@/components/home/BrandBanner';
@@ -6,6 +8,10 @@ import { CategoryCarousel } from '@/components/home/CategoryCarousel';
 import { CategoryIconGrid } from '@/components/home/CategoryIconGrid';
 import { ListingsSection } from '@/components/home/ListingsSection';
 import { getUser } from '@/lib/auth/auth-session';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default async function HomePage() {
   const [user, categories] = await Promise.all([getUser(), getCategories()]);
