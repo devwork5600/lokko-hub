@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
 import { getListingById } from '@/actions/listing-actions';
@@ -7,6 +8,40 @@ import { getUser } from '@/lib/auth/auth-session';
 import { ListingGallery } from './ListingGallery';
 import { ListingInfoCard } from './ListingInfoCard';
 import { SellerCard } from './SellerCard';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const listing = await getListingById(id);
+  if (!listing) return {};
+
+  const title = listing.title;
+  const description =
+    listing.description?.slice(0, 160) ||
+    `${listing.title} à ${listing.price.toLocaleString('fr-FR')} € · ${listing.location.city}`;
+  const image = listing.images[0]?.url;
+
+  return {
+    title,
+    description,
+    alternates: { canonical: `/listings/${listing.id}` },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      images: image ? [{ url: image }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: image ? [image] : undefined,
+    },
+  };
+}
 
 export default async function ListingDetailPage({
   params,
