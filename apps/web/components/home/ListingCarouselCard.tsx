@@ -38,6 +38,7 @@ export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
                 src={image.url}
                 alt={image.altText ?? listing.title}
                 fill
+                quality={50}
                 sizes="(min-width: 1024px) 208px, 176px"
                 className={`object-cover transition-all duration-300 group-hover:scale-105 ${
                   loaded ? 'opacity-100' : 'opacity-0'

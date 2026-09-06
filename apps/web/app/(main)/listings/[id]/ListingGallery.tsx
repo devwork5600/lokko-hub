@@ -1,10 +1,11 @@
 'use client';
 
-import { Check, ChevronLeft, ChevronRight, Heart, Images, Share2, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Heart, Images, X } from 'lucide-react';
 import Image from 'next/image';
 import { useState } from 'react';
 
 import { ImageSkeleton } from '@/components/ImageSkeleton';
+import { ShareButton } from '@/components/ShareButton';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useBookmark } from '@/hooks/use-bookmark';
 import { cn } from '@/lib/utils';
@@ -23,7 +24,6 @@ export function ListingGallery({
   initialBookmarked: boolean;
 }) {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
-  const [copied, setCopied] = useState(false);
   const [desktopLoadedCount, setDesktopLoadedCount] = useState(0);
   const [mobileLoaded, setMobileLoaded] = useState(false);
   const { bookmarked, toggle, isLoading } = useBookmark(listingId, initialBookmarked);
@@ -42,12 +42,6 @@ export function ListingGallery({
 
   function next() {
     setLightboxIndex((i) => (i === null ? null : (i + 1) % images.length));
-  }
-
-  async function handleShare() {
-    await navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   }
 
   const desktopImages = images.slice(0, 3);
@@ -85,7 +79,7 @@ export function ListingGallery({
         <button
           type="button"
           onClick={() => setLightboxIndex(0)}
-          className="absolute right-4 bottom-4 z-10 hidden items-center gap-2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white backdrop-blur transition-colors hover:bg-black/80 lg:flex"
+          className="absolute right-4 bottom-14 z-10 hidden items-center gap-2 rounded-full bg-black/70 px-4 py-2 text-sm font-medium text-white backdrop-blur transition-colors hover:bg-black/80 lg:flex"
         >
           <Images className="h-4 w-4" />
           Voir les {images.length} photos
@@ -96,7 +90,7 @@ export function ListingGallery({
       <button
         type="button"
         onClick={() => setLightboxIndex(0)}
-        className="relative block h-64 w-full overflow-hidden rounded-xl lg:hidden"
+        className="relative block h-96 w-full overflow-hidden rounded-xl sm:h-[420px] md:h-[480px] lg:hidden"
       >
         {!mobileLoaded && <ImageSkeleton />}
         <Image
@@ -109,7 +103,7 @@ export function ListingGallery({
           onLoad={() => setMobileLoaded(true)}
         />
         {images.length > 1 && (
-          <span className="absolute right-3 bottom-3 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs text-white">
+          <span className="absolute right-3 bottom-14 z-10 flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-xs text-white">
             <Images className="h-3.5 w-3.5" />
             1/{images.length}
           </span>
@@ -128,15 +122,7 @@ export function ListingGallery({
         >
           <Heart className={cn('h-4 w-4', bookmarked && 'fill-red-500 text-red-500')} />
         </button>
-        <button
-          type="button"
-          onClick={handleShare}
-          aria-label="Copier le lien de l'annonce"
-          title="Copier le lien"
-          className="flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-black shadow-md transition-colors hover:bg-white"
-        >
-          {copied ? <Check className="h-4 w-4" /> : <Share2 className="h-4 w-4" />}
-        </button>
+        <ShareButton url={`https://lokkohub.com/listings/${listingId}`} title={title} />
       </div>
 
       <Dialog open={lightboxIndex !== null} onOpenChange={(open) => !open && setLightboxIndex(null)}>
