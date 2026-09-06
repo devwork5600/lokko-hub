@@ -3,11 +3,20 @@ import { notFound } from 'next/navigation';
 
 import { getListingById, isBookmarked } from '@/actions/listing-actions';
 import { LeafletMap } from '@/components/LeafletMapClient';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
 import { getUser } from '@/lib/auth/auth-session';
 
 import { ListingGallery } from './ListingGallery';
 import { ListingInfoCard } from './ListingInfoCard';
 import { SellerCard } from './SellerCard';
+
+function categoryHref(params: { category: string; subCategory?: string; product?: string }) {
+  const qs = new URLSearchParams();
+  qs.set('category', params.category);
+  if (params.subCategory) qs.set('subCategory', params.subCategory);
+  if (params.product) qs.set('product', params.product);
+  return `/listings?${qs.toString()}`;
+}
 
 export async function generateMetadata({
   params,
@@ -77,6 +86,47 @@ export default async function ListingDetailPage({
 
       <div className="grid gap-8 lg:grid-cols-[6fr_2fr]">
         <div className="flex flex-col gap-6">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={categoryHref({ category: listing.category.slug })}>
+                  {listing.category.name}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              {listing.subCategory && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      href={categoryHref({
+                        category: listing.category.slug,
+                        subCategory: listing.subCategory.slug,
+                      })}
+                    >
+                      {listing.subCategory.name}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
+              {listing.product && (
+                <>
+                  <BreadcrumbSeparator />
+                  <BreadcrumbItem>
+                    <BreadcrumbLink
+                      href={categoryHref({
+                        category: listing.category.slug,
+                        subCategory: listing.subCategory?.slug,
+                        product: listing.product.slug,
+                      })}
+                    >
+                      {listing.product.name}
+                    </BreadcrumbLink>
+                  </BreadcrumbItem>
+                </>
+              )}
+            </BreadcrumbList>
+          </Breadcrumb>
+
           <ListingGallery
             images={listing.images}
             title={listing.title}
@@ -107,12 +157,6 @@ export default async function ListingDetailPage({
               <LeafletMap lat={listing.location.lat} lng={listing.location.lng} radiusKm={2} />
             </div>
           </section>
-
-          <p className="text-sm text-muted-foreground">
-            {listing.category.name}
-            {listing.subCategory ? ` › ${listing.subCategory.name}` : ''}
-            {listing.product ? ` › ${listing.product.name}` : ''}
-          </p>
 
           {/* Seller card also renders here on mobile, below the details, since the sidebar column is desktop-only */}
           <div className="lg:hidden">
