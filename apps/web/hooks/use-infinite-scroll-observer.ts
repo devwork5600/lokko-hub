@@ -32,6 +32,9 @@ export function useInfiniteScrollObserver({
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      hasTriggeredRef.current = false;
+    };
   }, [enabled, onIntersect, rootMargin, targetRef]);
 }

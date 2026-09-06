@@ -2,15 +2,17 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 
 import type { ListingCard } from '@/actions/listing-actions';
+import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { formatRelativeDate } from '@/lib/format-relative-date';
 import { preloadListingImages } from '@/lib/preload-listing-images';
 
 export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
   const image = listing.images[0];
   const hasPreloaded = useRef(false);
+  const [loaded, setLoaded] = useState(false);
 
   function handlePreload() {
     if (hasPreloaded.current) return;
@@ -30,13 +32,19 @@ export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
 
         <div className="relative h-64 w-full overflow-hidden rounded-lg bg-muted lg:h-72">
           {image ? (
-            <Image
-              src={image.url}
-              alt={image.altText ?? listing.title}
-              fill
-              sizes="(min-width: 1024px) 208px, 176px"
-              className="object-cover transition-transform duration-300 group-hover:scale-105"
-            />
+            <>
+              {!loaded && <ImageSkeleton className="rounded-lg" />}
+              <Image
+                src={image.url}
+                alt={image.altText ?? listing.title}
+                fill
+                sizes="(min-width: 1024px) 208px, 176px"
+                className={`object-cover transition-all duration-300 group-hover:scale-105 ${
+                  loaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                onLoad={() => setLoaded(true)}
+              />
+            </>
           ) : (
             <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
               Aucune image
