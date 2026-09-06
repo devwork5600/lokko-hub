@@ -10,11 +10,18 @@ const prismaMock = {
     findUnique: vi.fn(),
     update: vi.fn(),
     create: vi.fn(),
+    count: vi.fn(),
+    findMany: vi.fn(),
   },
   listingImage: {
     findMany: vi.fn(),
     deleteMany: vi.fn(),
     createMany: vi.fn(),
+  },
+  bookmark: {
+    findUnique: vi.fn(),
+    delete: vi.fn(),
+    create: vi.fn(),
   },
   $transaction: vi.fn((ops: unknown[]) => Promise.all(ops)),
   $executeRaw: vi.fn(),
@@ -158,5 +165,134 @@ describe('updateListing', () => {
     );
     expect(prismaMock.listingImage.deleteMany).toHaveBeenCalledWith({ where: { listingId: 'listing-1' } });
     expect(prismaMock.listingImage.createMany).toHaveBeenCalled();
+  });
+});
+
+describe('toggleBookmark', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('throws when not authenticated', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue(undefined);
+
+    const { toggleBookmark } = await import('./listing-actions');
+
+    await expect(toggleBookmark('listing-1')).rejects.toThrow(
+      'Vous devez être connecté pour ajouter un favori.',
+    );
+    expect(prismaMock.bookmark.create).not.toHaveBeenCalled();
+  });
+
+  it('creates a bookmark when none exists yet', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.bookmark.findUnique.mockResolvedValue(null);
+    prismaMock.bookmark.create.mockResolvedValue({});
+
+    const { toggleBookmark } = await import('./listing-actions');
+    const result = await toggleBookmark('listing-1');
+
+    expect(result).toEqual({ bookmarked: true });
+    expect(prismaMock.bookmark.create).toHaveBeenCalledWith({
+      data: { userId: 'user-1', listingId: 'listing-1' },
+    });
+    expect(prismaMock.bookmark.delete).not.toHaveBeenCalled();
+  });
+
+  it('removes an existing bookmark', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.bookmark.findUnique.mockResolvedValue({ userId: 'user-1', listingId: 'listing-1' });
+    prismaMock.bookmark.delete.mockResolvedValue({});
+
+    const { toggleBookmark } = await import('./listing-actions');
+    const result = await toggleBookmark('listing-1');
+
+    expect(result).toEqual({ bookmarked: false });
+    expect(prismaMock.bookmark.delete).toHaveBeenCalledWith({
+      where: { userId_listingId: { userId: 'user-1', listingId: 'listing-1' } },
+    });
+    expect(prismaMock.bookmark.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('isBookmarked', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns false without querying when not authenticated', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue(undefined);
+
+    const { isBookmarked } = await import('./listing-actions');
+    const result = await isBookmarked('listing-1');
+
+    expect(result).toBe(false);
+    expect(prismaMock.bookmark.findUnique).not.toHaveBeenCalled();
+  });
+
+  it('returns true when a bookmark exists for this user and listing', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.bookmark.findUnique.mockResolvedValue({ userId: 'user-1', listingId: 'listing-1' });
+
+    const { isBookmarked } = await import('./listing-actions');
+    const result = await isBookmarked('listing-1');
+
+    expect(result).toBe(true);
+  });
+
+  it('returns false when no bookmark exists', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.bookmark.findUnique.mockResolvedValue(null);
+
+    const { isBookmarked } = await import('./listing-actions');
+    const result = await isBookmarked('listing-1');
+
+    expect(result).toBe(false);
+  });
+});
+
+describe('getBookmarkedListings', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('returns an empty page without querying when not authenticated', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue(undefined);
+
+    const { getBookmarkedListings } = await import('./listing-actions');
+    const result = await getBookmarkedListings();
+
+    expect(result).toEqual({ listings: [], hasMore: false, total: 0 });
+    expect(prismaMock.listing.findMany).not.toHaveBeenCalled();
+  });
+
+  it('filters by the current user bookmarks and reports hasMore correctly', async () => {
+    const { getUser } = await import('@/lib/auth/auth-session');
+    vi.mocked(getUser).mockResolvedValue({ id: 'user-1' } as never);
+    prismaMock.listing.count.mockResolvedValue(10);
+    prismaMock.listing.findMany.mockResolvedValue([{ id: 'listing-1' }, { id: 'listing-2' }]);
+
+    const { getBookmarkedListings } = await import('./listing-actions');
+    const result = await getBookmarkedListings({ page: 1, pageSize: 2 });
+
+    expect(prismaMock.listing.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { deletedAt: null, bookmarks: { some: { userId: 'user-1' } } },
+        skip: 0,
+        take: 2,
+      }),
+    );
+    expect(result).toEqual({
+      listings: [{ id: 'listing-1' }, { id: 'listing-2' }],
+      hasMore: true,
+      total: 10,
+    });
   });
 });
