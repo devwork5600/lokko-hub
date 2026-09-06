@@ -1,6 +1,6 @@
 'use client';
 
-import { ClipboardListIcon, MessageCircleIcon, SearchIcon, BellIcon } from 'lucide-react';
+import { ClipboardListIcon, HeartIcon, MessageCircleIcon, SearchIcon, BellIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
@@ -14,6 +14,7 @@ type NavItem = {
 
 const navItems: NavItem[] = [
   { label: 'Mes annonces', href: '/account/listings', icon: ClipboardListIcon },
+  { label: 'Favoris', href: '/account/favorites', icon: HeartIcon },
   { label: 'Messages', href: '/account/messages', icon: MessageCircleIcon },
   { label: 'Recherches sauvegardées', href: '/account/saved-searches', icon: SearchIcon },
   { label: 'Notifications', href: '/account/notifications', icon: BellIcon },

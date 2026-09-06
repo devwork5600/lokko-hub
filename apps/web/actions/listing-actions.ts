@@ -196,6 +196,60 @@ export async function getUserListings({ page = 1, pageSize = 8 }: { page?: numbe
   return { listings, hasMore: skip + listings.length < total, total };
 }
 
+export async function getBookmarkedListings({
+  page = 1,
+  pageSize = 8,
+}: { page?: number; pageSize?: number } = {}) {
+  const user = await getUser();
+  if (!user) return { listings: [], hasMore: false, total: 0 };
+
+  const skip = (page - 1) * pageSize;
+  const where: Prisma.ListingWhereInput = {
+    deletedAt: null,
+    bookmarks: { some: { userId: user.id } },
+  };
+
+  const [total, listings] = await Promise.all([
+    prisma.listing.count({ where }),
+    prisma.listing.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: pageSize,
+      select: listingCardSelect,
+    }),
+  ]);
+
+  return { listings, hasMore: skip + listings.length < total, total };
+}
+
+export async function isBookmarked(listingId: string) {
+  const user = await getUser();
+  if (!user) return false;
+
+  const bookmark = await prisma.bookmark.findUnique({
+    where: { userId_listingId: { userId: user.id, listingId } },
+  });
+  return bookmark !== null;
+}
+
+export async function toggleBookmark(listingId: string) {
+  const user = await getUser();
+  if (!user) throw new Error('Vous devez être connecté pour ajouter un favori.');
+
+  const existing = await prisma.bookmark.findUnique({
+    where: { userId_listingId: { userId: user.id, listingId } },
+  });
+
+  if (existing) {
+    await prisma.bookmark.delete({ where: { userId_listingId: { userId: user.id, listingId } } });
+    return { bookmarked: false };
+  }
+
+  await prisma.bookmark.create({ data: { userId: user.id, listingId } });
+  return { bookmarked: true };
+}
+
 // Never mutates an existing Location row: two listings can end up pointing at
 // the same address, and mutating it in place would silently change every
 // other listing that happens to share it. Always resolve to a row (existing
