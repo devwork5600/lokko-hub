@@ -9,10 +9,12 @@ export function ListingsSection({
   title,
   listings,
   href,
+  priority,
 }: {
   title: string;
   listings: ListingCard[];
   href: string;
+  priority?: boolean;
 }) {
   if (listings.length === 0) return null;
 
@@ -29,7 +31,7 @@ export function ListingsSection({
         </Link>
       </div>
 
-      <ListingCarousel listings={listings} />
+      <ListingCarousel listings={listings} priority={priority} />
     </section>
   );
 }

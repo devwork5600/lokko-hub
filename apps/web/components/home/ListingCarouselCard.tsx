@@ -9,7 +9,7 @@ import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { formatRelativeDate } from '@/lib/format-relative-date';
 import { preloadListingImages } from '@/lib/preload-listing-images';
 
-export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
+export function ListingCarouselCard({ listing, priority }: { listing: ListingCard; priority?: boolean }) {
   const image = listing.images[0];
   const hasPreloaded = useRef(false);
   const [loaded, setLoaded] = useState(false);
@@ -38,6 +38,7 @@ export function ListingCarouselCard({ listing }: { listing: ListingCard }) {
                 src={image.url}
                 alt={image.altText ?? listing.title}
                 fill
+                priority={priority}
                 quality={50}
                 sizes="(min-width: 1024px) 208px, 176px"
                 className={`object-cover transition-all duration-300 group-hover:scale-105 ${

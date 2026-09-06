@@ -34,6 +34,7 @@ export default async function HomePage() {
         title="Fruits et légumes"
         listings={fruitsLegumes.listings}
         href="/listings?category=fruits-legumes"
+        priority
       />
       <ListingsSection
         title="Produits artisanaux"
