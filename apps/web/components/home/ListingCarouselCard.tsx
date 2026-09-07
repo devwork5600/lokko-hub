@@ -41,7 +41,7 @@ export function ListingCarouselCard({ listing, priority }: { listing: ListingCar
                 priority={priority}
                 quality={50}
                 sizes="(min-width: 1024px) 208px, 176px"
-                className={`object-cover transition-all duration-300 group-hover:scale-105 ${
+                className={`object-cover transition-[opacity,transform] duration-300 group-hover:scale-105 ${
                   loaded ? 'opacity-100' : 'opacity-0'
                 }`}
                 onLoad={() => setLoaded(true)}
