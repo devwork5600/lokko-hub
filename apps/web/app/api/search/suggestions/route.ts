@@ -83,9 +83,6 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
       select: {
         title: true,
-        category: { select: { slug: true, name: true } },
-        subCategory: { select: { slug: true, name: true } },
-        product: { select: { slug: true, name: true } },
       },
     });
 
@@ -93,12 +90,6 @@ export async function GET(req: NextRequest) {
       suggestions.push({
         label: listing.title,
         query: listing.title,
-        category: listing.category.slug,
-        categoryName: listing.category.name,
-        ...(listing.subCategory
-          ? { subCategory: listing.subCategory.slug, subCategoryName: listing.subCategory.name }
-          : {}),
-        ...(listing.product ? { product: listing.product.slug, productName: listing.product.name } : {}),
         from: 'title',
       });
     }
