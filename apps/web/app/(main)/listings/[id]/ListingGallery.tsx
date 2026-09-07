@@ -66,7 +66,7 @@ export function ListingGallery({
               fill
               priority={index === 0}
               sizes="33vw"
-              className={`object-cover transition-[opacity,transform] duration-500 group-hover:scale-105 ${
+              className={`transform-gpu object-cover transition-[opacity,scale] duration-500 will-change-transform group-hover:scale-105 ${
                 desktopAllLoaded ? 'opacity-100' : 'opacity-0'
               }`}
               onLoad={() => setDesktopLoadedCount((count) => count + 1)}
