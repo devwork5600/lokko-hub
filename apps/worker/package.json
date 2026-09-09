@@ -14,7 +14,7 @@
     "bullmq": "^6.3.4",
     "dotenv": "^17.4.2",
     "ioredis": "^6.0.0",
-    "resend": "^6.12.4",
+    "resend": "^6.26.0",
     "tsx": "^4.22.3"
   },
   "devDependencies": {
