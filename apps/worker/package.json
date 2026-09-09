@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@lokko-hub/db": "*",
-    "bullmq": "^5.78.0",
+    "bullmq": "^6.3.4",
     "dotenv": "^17.4.2",
-    "ioredis": "^5.10.1",
+    "ioredis": "^6.0.0",
     "resend": "^6.12.4",
     "tsx": "^4.22.3"
   },
