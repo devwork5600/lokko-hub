@@ -19,7 +19,7 @@ jobs:
       BETTER_AUTH_SECRET: placeholder-ci-secret-not-used-at-build-time
       BETTER_AUTH_URL: http://localhost:3000
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-node@v4
         with:
