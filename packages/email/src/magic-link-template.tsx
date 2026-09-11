@@ -35,7 +35,7 @@ export const MagicLinkTemplate = ({ url }: { url: string }) => {
                 <tbody>
                   <tr>
                     <td style={{ verticalAlign: 'middle', paddingRight: 8 }}>
-                      <Img src={logoUrl()} width="28" height="28" alt="Lokko Hub" />
+                      <Img src={logoUrl()} width="28" height="28" alt="" />
                     </td>
                     <td style={{ verticalAlign: 'middle' }}>
                       <Text className="m-0 font-bold text-[22px] text-black leading-[28px]">
