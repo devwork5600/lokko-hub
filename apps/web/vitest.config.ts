@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { defineConfig } from 'vitest/config';
+import { configDefaults, defineConfig } from 'vitest/config';
 
 export default defineConfig({
   resolve: {
@@ -10,5 +10,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // e2e/ holds Playwright specs, not Vitest ones — both use the .spec.ts
+    // suffix by default, and Vitest's test() collides with Playwright's.
+    exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 });
