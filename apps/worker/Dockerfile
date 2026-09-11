@@ -17,15 +17,17 @@ COPY turbo.json ./
 COPY apps/worker/package.json ./apps/worker/
 COPY packages/db/package.json ./packages/db/
 COPY packages/db/prisma/schema.prisma ./packages/db/prisma/
+COPY packages/email/package.json ./packages/email/
 
 RUN npm ci --ignore-scripts
 
 # Copy source for this service and the workspace packages it uses
 COPY packages/db ./packages/db
+COPY packages/email ./packages/email
 COPY apps/worker ./apps/worker
 
-# Builds @lokko-hub/db (prisma generate + tsc); @lokko-hub/worker has no build
-# step of its own, it runs directly via tsx.
+# Builds @lokko-hub/db (prisma generate + tsc) and @lokko-hub/email (tsc);
+# @lokko-hub/worker has no build step of its own, it runs directly via tsx.
 RUN npx turbo build --filter=@lokko-hub/worker
 
 EXPOSE 3002
