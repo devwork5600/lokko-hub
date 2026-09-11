@@ -2,10 +2,10 @@ import { betterAuth } from 'better-auth';
 import { prismaAdapter } from 'better-auth/adapters/prisma';
 import { nextCookies } from 'better-auth/next-js';
 import { magicLink } from 'better-auth/plugins';
-
-import { sendMagicLinkEmail } from '@/lib/email';
+import * as React from 'react';
 
 import { prisma } from '@lokko-hub/db';
+import { sendEmail, MagicLinkTemplate } from '@lokko-hub/email';
 
 export const auth = betterAuth({
   database: prismaAdapter(prisma, { provider: 'postgresql' }),
@@ -30,7 +30,15 @@ export const auth = betterAuth({
     // Magic Link Plugin: passwordless sign-in via email
     magicLink({
       sendMagicLink: async ({ email, url }) => {
-        await sendMagicLinkEmail({ to: email, url });
+        const result = await sendEmail({
+          to: email,
+          subject: 'Your Magic Sign-In Link',
+          react: React.createElement(MagicLinkTemplate, { url }),
+        });
+
+        if (!result.success) {
+          throw new Error(result.message || 'Failed to send magic link');
+        }
       },
     }),
   ],
