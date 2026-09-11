@@ -17,8 +17,9 @@ vi.mock('./socket-broadcast', () => ({
 }));
 
 const emailMock = vi.fn();
-vi.mock('./email', () => ({
-  sendListingMatchEmail: (...args: unknown[]) => emailMock(...args),
+vi.mock('@lokko-hub/email', () => ({
+  sendEmail: (...args: unknown[]) => emailMock(...args),
+  ListingMatchTemplate: (props: unknown) => props,
 }));
 
 const NANTES = { lat: 47.2184, lng: -1.5536 };
@@ -155,7 +156,12 @@ describe('matchSavedSearches', () => {
     await matchSavedSearches('listing-1');
 
     expect(emailMock).toHaveBeenCalledWith(
-      expect.objectContaining({ to: 'buyer@test.com', listingTitle: 'Tomates bio' }),
+      expect.objectContaining({
+        to: 'buyer@test.com',
+        react: expect.objectContaining({
+          props: expect.objectContaining({ listingTitle: 'Tomates bio' }),
+        }),
+      }),
     );
   });
 

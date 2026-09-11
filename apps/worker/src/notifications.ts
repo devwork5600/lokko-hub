@@ -1,6 +1,8 @@
-import { prisma } from '@lokko-hub/db';
+import * as React from 'react';
 
-import { sendListingMatchEmail } from './email';
+import { prisma } from '@lokko-hub/db';
+import { sendEmail, ListingMatchTemplate } from '@lokko-hub/email';
+
 import { haversineDistanceKm } from './geo';
 import { broadcastToUser } from './socket-broadcast';
 
@@ -133,9 +135,14 @@ export async function matchSavedSearches(listingId: string): Promise<void> {
       const recipient = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
       if (recipient?.email) {
         const listingUrl = `${process.env.WEB_APP_URL ?? 'http://localhost:3000'}/listings/${listing.id}`;
-        sendListingMatchEmail({ to: recipient.email, listingTitle: listing.title, listingUrl }).catch(
-          (err) => console.error('Failed to send listing-match email:', err),
-        );
+        sendEmail({
+          to: recipient.email,
+          subject: `Nouvelle annonce : ${listing.title}`,
+          react: React.createElement(ListingMatchTemplate, {
+            listingTitle: listing.title,
+            listingUrl,
+          }),
+        }).catch((err) => console.error('Failed to send listing-match email:', err));
       }
     }
   }

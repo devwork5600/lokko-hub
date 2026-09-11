@@ -1,9 +1,11 @@
 'use server';
 
+import * as React from 'react';
+
 import { prisma } from '@lokko-hub/db';
+import { sendEmail, MessageNotificationTemplate } from '@lokko-hub/email';
 
 import { getUser } from '@/lib/auth/auth-session';
-import { sendMessageEmail } from '@/lib/email';
 import { broadcastToUser } from '@/lib/socket-broadcast';
 
 type ActionResult = { success: boolean; error?: string };
@@ -109,11 +111,15 @@ export async function sendMessage(
 
     if (recipient?.email) {
       const conversationUrl = `${process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000'}/account/messages/${conversationId}`;
-      sendMessageEmail({
+      const senderName = sender?.name || 'Un utilisateur';
+      sendEmail({
         to: recipient.email,
-        senderName: sender?.name || 'Un utilisateur',
-        messagePreview: preview,
-        conversationUrl,
+        subject: `Nouveau message de ${senderName}`,
+        react: React.createElement(MessageNotificationTemplate, {
+          senderName,
+          messagePreview: preview,
+          conversationUrl,
+        }),
       }).catch((err) => console.error('Failed to send message email:', err));
     }
   }

@@ -27,8 +27,9 @@ vi.mock('@/lib/socket-broadcast', () => ({
   broadcastToUser: (...args: unknown[]) => broadcastMock(...args),
 }));
 
-vi.mock('@/lib/email', () => ({
-  sendMessageEmail: vi.fn(),
+vi.mock('@lokko-hub/email', () => ({
+  sendEmail: vi.fn(),
+  MessageNotificationTemplate: () => null,
 }));
 
 const USER_A = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
