@@ -68,9 +68,6 @@ model Account {
   id         String @id @default(uuid())
   accountId  String
   providerId String
-  // better-auth 1.7 scopes account identity by issuer, not just providerId —
-  // see https://better-auth.com/docs/guides/1-7-upgrade-guide
-  issuer     String
 
   accessToken           String?
   refreshToken          String?
@@ -86,7 +83,7 @@ model Account {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([issuer, accountId])
+  @@unique([providerId, accountId])
   @@map("account")
 }
 
