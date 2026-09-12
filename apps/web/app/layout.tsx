@@ -3,6 +3,7 @@ import { Geist, Poppins } from 'next/font/google';
 import type { ReactNode } from 'react';
 
 import { QueryProvider } from '@/components/QueryProvider';
+import { ServiceWorkerProvider } from '@/components/ServiceWorkerProvider';
 import { SocketProvider } from '@/components/SocketProvider';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { Toaster } from '@/components/ui/sonner';
@@ -80,7 +81,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       >
         <ThemeProvider>
           <QueryProvider>
-            <SocketProvider>{children}</SocketProvider>
+            <ServiceWorkerProvider>
+              <SocketProvider>{children}</SocketProvider>
+            </ServiceWorkerProvider>
           </QueryProvider>
           <Toaster />
         </ThemeProvider>
