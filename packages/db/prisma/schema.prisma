@@ -41,9 +41,10 @@ model User {
   conversationsAsUser1 Conversation[] @relation("ConversationUser1")
   conversationsAsUser2 Conversation[] @relation("ConversationUser2")
 
-  savedSearches SavedSearch[]
-  notifications Notification[]
-  bookmarks     Bookmark[]
+  savedSearches     SavedSearch[]
+  notifications     Notification[]
+  bookmarks         Bookmark[]
+  pushSubscriptions PushSubscription[]
 
   @@map("user")
 }
@@ -392,4 +393,35 @@ model Bookmark {
   @@id([userId, listingId])
   @@index([listingId])
   @@map("bookmark")
+}
+
+//
+// ==========================
+// PUSH NOTIFICATIONS
+// ==========================
+//
+
+model PushSubscription {
+  id String @id @default(uuid())
+
+  // Mirrors the browser's PushSubscription object exactly (endpoint +
+  // keys.p256dh + keys.auth) so saving one is a direct field-for-field
+  // copy, no reshaping. `endpoint` is unique per browser/device install —
+  // re-subscribing the same device upserts this row rather than
+  // duplicating it.
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  // Informational only (shown in an account settings list of "notified
+  // devices"), never used to identify a subscription.
+  userAgent String?
+
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("push_subscription")
 }
