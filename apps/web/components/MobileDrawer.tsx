@@ -28,7 +28,7 @@ export function MobileDrawer({
         }`}
       />
       <aside
-        className={`fixed top-0 left-0 z-[1095] h-screen w-72 bg-background shadow-xl transition-transform duration-300 ease-out lg:hidden ${
+        className={`fixed top-0 left-0 z-[1095] h-screen w-72 overflow-y-auto scrollbar-none bg-background shadow-xl transition-transform duration-300 ease-out lg:hidden ${
           open ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
