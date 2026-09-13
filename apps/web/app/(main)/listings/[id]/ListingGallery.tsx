@@ -57,21 +57,28 @@ export function ListingGallery({
             key={image.url}
             type="button"
             onClick={() => setLightboxIndex(index)}
-            className="group relative h-full flex-1 transform-gpu cursor-pointer overflow-hidden backface-hidden"
+            className="group relative h-full flex-1 cursor-pointer overflow-hidden"
           >
             {!desktopAllLoaded && <ImageSkeleton />}
-            <Image
-              src={image.url}
-              alt={image.altText ?? title}
-              fill
-              priority={index === 0}
-              quality={50}
-              sizes="33vw"
-              className={`transform-gpu object-cover backface-hidden transition-[opacity,scale] duration-500 will-change-transform group-hover:scale-105 ${
-                desktopAllLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => setDesktopLoadedCount((count) => count + 1)}
-            />
+            {/* Scale lives on this plain wrapper, never on the <Image> itself —
+                combining `transform` and `object-fit: cover` on the same element
+                is a known Firefox bug (the scale origin ends up computed against
+                the pre-crop image, not the visible box), which reads as the zoom
+                drifting sideways instead of staying centered. */}
+            <div className="transform-gpu backface-hidden relative h-full w-full transition-transform duration-500 will-change-transform group-hover:scale-105">
+              <Image
+                src={image.url}
+                alt={image.altText ?? title}
+                fill
+                priority={index === 0}
+                quality={50}
+                sizes="33vw"
+                className={`object-cover transition-opacity duration-500 ${
+                  desktopAllLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                onLoad={() => setDesktopLoadedCount((count) => count + 1)}
+              />
+            </div>
           </button>
         ))}
       </div>
