@@ -57,7 +57,7 @@ export function ListingGallery({
             key={image.url}
             type="button"
             onClick={() => setLightboxIndex(index)}
-            className="group relative h-full flex-1 cursor-pointer overflow-hidden"
+            className="group relative h-full flex-1 transform-gpu cursor-pointer overflow-hidden"
           >
             {!desktopAllLoaded && <ImageSkeleton />}
             <Image
@@ -65,6 +65,7 @@ export function ListingGallery({
               alt={image.altText ?? title}
               fill
               priority={index === 0}
+              quality={50}
               sizes="33vw"
               className={`transform-gpu object-cover transition-[opacity,scale] duration-500 will-change-transform group-hover:scale-105 ${
                 desktopAllLoaded ? 'opacity-100' : 'opacity-0'
