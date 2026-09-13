@@ -60,12 +60,14 @@ export function ListingGallery({
             className="group relative h-full flex-1 cursor-pointer overflow-hidden"
           >
             {!desktopAllLoaded && <ImageSkeleton />}
-            {/* Scale lives on this plain wrapper, never on the <Image> itself —
-                combining `transform` and `object-fit: cover` on the same element
-                is a known Firefox bug (the scale origin ends up computed against
-                the pre-crop image, not the visible box), which reads as the zoom
-                drifting sideways instead of staying centered. */}
-            <div className="transform-gpu backface-hidden relative h-full w-full transition-transform duration-500 will-change-transform group-hover:scale-105">
+            {/* Scale lives on this plain wrapper, not on the <Image> itself, to
+                keep it separate from object-fit: cover. `will-change` is only
+                added while actually hovered (group-hover:), not permanently —
+                a permanently GPU-promoted layer on a fractional-width flex item
+                (these columns rarely land on a whole pixel) is what caused a
+                2-3px snap in Firefox specifically at the end of each scale
+                transition, when the layer gets merged back into normal layout. */}
+            <div className="backface-hidden relative h-full w-full transition-transform duration-500 group-hover:scale-105 group-hover:will-change-transform">
               <Image
                 src={image.url}
                 alt={image.altText ?? title}
