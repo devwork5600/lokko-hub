@@ -1,5 +1,6 @@
 import { getUserNotifications, markNotificationsAsRead } from '@/actions/notification-actions';
 import { NotificationCard } from '@/components/NotificationCard';
+import { PushNotificationButton } from '@/components/PushNotificationButton';
 import { SyncNotificationBadge } from '@/components/SyncNotificationBadge';
 import { getUser } from '@/lib/auth/auth-session';
 
@@ -15,7 +16,10 @@ export default async function NotificationsPage() {
   return (
     <div>
       <SyncNotificationBadge />
-      <h1 className="mb-6 text-xl font-semibold text-foreground">Notifications</h1>
+      <div className="mb-6 flex items-center justify-between gap-4">
+        <h1 className="text-xl font-semibold text-foreground">Notifications</h1>
+        <PushNotificationButton />
+      </div>
 
       {notifications.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">Aucune notification pour le moment.</p>
