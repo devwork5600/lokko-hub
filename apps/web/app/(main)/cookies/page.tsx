@@ -47,7 +47,20 @@ export default function CookiesPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">4. Aucun cookie publicitaire</h2>
+          <h2 className="mb-2 text-lg font-semibold">4. Statistiques de fréquentation</h2>
+          <p className="leading-relaxed text-muted-foreground">
+            Lokko Hub utilise Vercel Web Analytics pour comprendre comment le site est utilisé (pages
+            visitées, provenance du trafic, type d&apos;appareil et de navigateur, localisation
+            approximative au niveau de la ville). Ce service ne pose aucun cookie et n&apos;utilise
+            aucun identifiant permanent : chaque visite est identifiée par un hash technique dérivé de
+            la requête, automatiquement supprimé au bout de 24 heures. Les données sont anonymisées et
+            agrégées — elles ne sont jamais associées à un compte, une adresse e-mail ou une adresse
+            IP, et ne permettent pas de reconstituer ton parcours d&apos;un site à l&apos;autre.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-lg font-semibold">5. Aucun cookie publicitaire</h2>
           <p className="leading-relaxed text-muted-foreground">
             Lokko Hub n&apos;utilise aucun cookie publicitaire ni de traceur tiers à des fins de
             marketing ou de revente de données.
@@ -55,7 +68,7 @@ export default function CookiesPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">5. Gérer les cookies et les notifications</h2>
+          <h2 className="mb-2 text-lg font-semibold">6. Gérer les cookies et les notifications</h2>
           <p className="leading-relaxed text-muted-foreground">
             Tu peux supprimer ou bloquer les cookies à tout moment depuis les réglages de ton
             navigateur. Bloquer le cookie de session t&apos;empêchera de rester connecté à ton compte.
