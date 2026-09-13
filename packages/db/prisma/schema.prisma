@@ -30,6 +30,13 @@ model User {
 
   deletedAt DateTime?
 
+  // Per-category opt-out for push specifically — the device-level
+  // subscribe/permission stays a single on/off switch (see PushSubscription),
+  // these just gate which events actually trigger a send once subscribed.
+  pushMessagesEnabled      Boolean @default(true)
+  pushListingStatusEnabled Boolean @default(true)
+  pushSavedSearchEnabled   Boolean @default(true)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

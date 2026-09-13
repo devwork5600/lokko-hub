@@ -106,7 +106,7 @@ export async function sendMessage(
 
   if (!broadcastResult.online) {
     const [recipient, sender] = await Promise.all([
-      prisma.user.findUnique({ where: { id: recipientId }, select: { email: true } }),
+      prisma.user.findUnique({ where: { id: recipientId }, select: { email: true, pushMessagesEnabled: true } }),
       prisma.user.findUnique({ where: { id: user.id }, select: { name: true } }),
     ]);
 
@@ -115,11 +115,13 @@ export async function sendMessage(
 
     // Push and email are independent fallback channels, not either/or — a
     // recipient with both a subscribed device and an email gets both.
-    sendPushToUser(recipientId, {
-      title: `Nouveau message de ${senderName}`,
-      body: preview,
-      url: conversationUrl,
-    }).catch((err) => console.error('Failed to send message push:', err));
+    if (recipient?.pushMessagesEnabled) {
+      sendPushToUser(recipientId, {
+        title: `Nouveau message de ${senderName}`,
+        body: preview,
+        url: conversationUrl,
+      }).catch((err) => console.error('Failed to send message push:', err));
+    }
 
     if (recipient?.email) {
       sendEmail({
