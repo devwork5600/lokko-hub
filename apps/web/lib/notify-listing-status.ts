@@ -27,6 +27,7 @@ export async function notifyListingStatusChange(
       id: true,
       title: true,
       ownerId: true,
+      owner: { select: { pushListingStatusEnabled: true } },
       images: { orderBy: { index: 'asc' }, take: 1, select: { url: true } },
     },
   });
@@ -49,7 +50,7 @@ export async function notifyListingStatusChange(
     online: false,
   }));
 
-  if (!broadcastResult.online) {
+  if (!broadcastResult.online && listing.owner.pushListingStatusEnabled) {
     const webAppUrl = process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000';
     sendPushToUser(listing.ownerId, {
       title: PUSH_TITLE[type],

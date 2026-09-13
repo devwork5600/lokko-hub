@@ -22,6 +22,7 @@ export async function notifyListingStatusChange(
       title: true,
       ownerId: true,
       rejectionReason: true,
+      owner: { select: { pushListingStatusEnabled: true } },
       images: { orderBy: { index: 'asc' }, take: 1, select: { url: true } },
     },
   });
@@ -45,7 +46,7 @@ export async function notifyListingStatusChange(
     online: false,
   }));
 
-  if (!broadcastResult.online) {
+  if (!broadcastResult.online && listing.owner.pushListingStatusEnabled) {
     const webAppUrl = process.env.WEB_APP_URL ?? 'http://localhost:3000';
     const url =
       type === 'LISTING_REJECTED'
@@ -152,13 +153,19 @@ export async function matchSavedSearches(listingId: string): Promise<void> {
     if (!broadcastResult.online) {
       const listingUrl = `${process.env.WEB_APP_URL ?? 'http://localhost:3000'}/listings/${listing.id}`;
 
-      sendPushToUser(userId, {
-        title: 'Nouvelle annonce qui correspond à ta recherche',
-        body: listing.title,
-        url: listingUrl,
-      }).catch((err) => console.error('Failed to send listing-match push:', err));
+      const recipient = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true, pushSavedSearchEnabled: true },
+      });
 
-      const recipient = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
+      if (recipient?.pushSavedSearchEnabled) {
+        sendPushToUser(userId, {
+          title: 'Nouvelle annonce qui correspond à ta recherche',
+          body: listing.title,
+          url: listingUrl,
+        }).catch((err) => console.error('Failed to send listing-match push:', err));
+      }
+
       if (recipient?.email) {
         sendEmail({
           to: recipient.email,
