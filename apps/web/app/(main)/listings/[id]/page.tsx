@@ -65,7 +65,7 @@ export default async function ListingDetailPage({
   const isOwner = user?.id === listing.ownerId;
 
   return (
-    <main className="mx-auto w-full max-w-6xl px-4 pb-16 lg:mt-6">
+    <main className="mx-auto mt-4 w-full max-w-6xl px-4 pb-16 lg:mt-6">
       {isOwner && listing.status === 'VERIFICATION' && (
         <div
           role="status"
