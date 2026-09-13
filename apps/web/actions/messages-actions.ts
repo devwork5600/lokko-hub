@@ -6,6 +6,7 @@ import { prisma } from '@lokko-hub/db';
 import { sendEmail, MessageNotificationTemplate } from '@lokko-hub/email';
 
 import { getUser } from '@/lib/auth/auth-session';
+import { sendPushToUser } from '@/lib/send-push';
 import { broadcastToUser } from '@/lib/socket-broadcast';
 
 type ActionResult = { success: boolean; error?: string };
@@ -109,9 +110,18 @@ export async function sendMessage(
       prisma.user.findUnique({ where: { id: user.id }, select: { name: true } }),
     ]);
 
+    const conversationUrl = `${process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000'}/account/messages/${conversationId}`;
+    const senderName = sender?.name || 'Un utilisateur';
+
+    // Push and email are independent fallback channels, not either/or — a
+    // recipient with both a subscribed device and an email gets both.
+    sendPushToUser(recipientId, {
+      title: `Nouveau message de ${senderName}`,
+      body: preview,
+      url: conversationUrl,
+    }).catch((err) => console.error('Failed to send message push:', err));
+
     if (recipient?.email) {
-      const conversationUrl = `${process.env.NEXT_PUBLIC_URL ?? 'http://localhost:3000'}/account/messages/${conversationId}`;
-      const senderName = sender?.name || 'Un utilisateur';
       sendEmail({
         to: recipient.email,
         subject: `Nouveau message de ${senderName}`,
