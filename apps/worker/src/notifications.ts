@@ -4,6 +4,7 @@ import { prisma } from '@lokko-hub/db';
 import { sendEmail, ListingMatchTemplate } from '@lokko-hub/email';
 
 import { haversineDistanceKm } from './geo';
+import { sendPushToUser } from './send-push';
 import { broadcastToUser } from './socket-broadcast';
 
 // Notifies a listing's owner that moderation resolved it — approved or
@@ -132,9 +133,16 @@ export async function matchSavedSearches(listingId: string): Promise<void> {
     );
 
     if (!broadcastResult.online) {
+      const listingUrl = `${process.env.WEB_APP_URL ?? 'http://localhost:3000'}/listings/${listing.id}`;
+
+      sendPushToUser(userId, {
+        title: 'Nouvelle annonce qui correspond à ta recherche',
+        body: listing.title,
+        url: listingUrl,
+      }).catch((err) => console.error('Failed to send listing-match push:', err));
+
       const recipient = await prisma.user.findUnique({ where: { id: userId }, select: { email: true } });
       if (recipient?.email) {
-        const listingUrl = `${process.env.WEB_APP_URL ?? 'http://localhost:3000'}/listings/${listing.id}`;
         sendEmail({
           to: recipient.email,
           subject: `Nouvelle annonce : ${listing.title}`,
