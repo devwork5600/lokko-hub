@@ -40,10 +40,27 @@ export async function notifyListingStatusChange(
     update: { payload, read: false, createdAt: new Date() },
   });
 
-  await broadcastToUser(listing.ownerId, 'notification:new', payload).catch(() => ({
+  const broadcastResult = await broadcastToUser(listing.ownerId, 'notification:new', payload).catch(() => ({
     success: false,
     online: false,
   }));
+
+  if (!broadcastResult.online) {
+    const webAppUrl = process.env.WEB_APP_URL ?? 'http://localhost:3000';
+    const url =
+      type === 'LISTING_REJECTED'
+        ? `${webAppUrl}/account/listings/${listing.id}/edit`
+        : `${webAppUrl}/listings/${listing.id}`;
+
+    sendPushToUser(listing.ownerId, {
+      title: type === 'LISTING_REJECTED' ? 'Ton annonce a été refusée' : 'Ton annonce est en ligne',
+      body:
+        type === 'LISTING_REJECTED' && listing.rejectionReason
+          ? `${listing.title} — ${listing.rejectionReason}`
+          : listing.title,
+      url,
+    }).catch((err) => console.error('Failed to send listing-status push:', err));
+  }
 }
 
 export async function matchSavedSearches(listingId: string): Promise<void> {
