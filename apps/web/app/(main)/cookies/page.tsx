@@ -32,7 +32,22 @@ export default function CookiesPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">3. Aucun cookie publicitaire</h2>
+          <h2 className="mb-2 text-lg font-semibold">3. Notifications push (optionnelles)</h2>
+          <p className="leading-relaxed text-muted-foreground">
+            Si tu actives les notifications depuis ton compte, ton navigateur installe un Service
+            Worker — un script qui reste actif même quand aucun onglet du site n&apos;est ouvert — et
+            te demande la permission d&apos;afficher des notifications. Si tu acceptes, une clé
+            d&apos;abonnement (pas un cookie) est enregistrée sur nos serveurs et associée à ton
+            compte, uniquement pour t&apos;envoyer les notifications que tu as choisi de recevoir
+            (nouveaux messages, statut de tes annonces, annonces correspondant à tes recherches
+            sauvegardées). Tu peux désactiver chaque catégorie individuellement depuis la page
+            Notifications de ton compte, ou révoquer entièrement la permission depuis les réglages
+            de ton navigateur.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="mb-2 text-lg font-semibold">4. Aucun cookie publicitaire</h2>
           <p className="leading-relaxed text-muted-foreground">
             Lokko Hub n&apos;utilise aucun cookie publicitaire ni de traceur tiers à des fins de
             marketing ou de revente de données.
@@ -40,10 +55,12 @@ export default function CookiesPage() {
         </section>
 
         <section>
-          <h2 className="mb-2 text-lg font-semibold">4. Gérer les cookies</h2>
+          <h2 className="mb-2 text-lg font-semibold">5. Gérer les cookies et les notifications</h2>
           <p className="leading-relaxed text-muted-foreground">
             Tu peux supprimer ou bloquer les cookies à tout moment depuis les réglages de ton
             navigateur. Bloquer le cookie de session t&apos;empêchera de rester connecté à ton compte.
+            Les notifications push se gèrent séparément (voir section 3 ci-dessus) : les désactiver
+            n&apos;a aucun effet sur ta connexion au site.
           </p>
         </section>
       </div>
