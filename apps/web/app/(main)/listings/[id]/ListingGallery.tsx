@@ -60,27 +60,26 @@ export function ListingGallery({
             className="group relative h-full flex-1 cursor-pointer overflow-hidden"
           >
             {!desktopAllLoaded && <ImageSkeleton />}
-            {/* Scale lives on this plain wrapper, not on the <Image> itself, to
-                keep it separate from object-fit: cover. `will-change` is only
-                added while actually hovered (group-hover:), not permanently —
-                a permanently GPU-promoted layer on a fractional-width flex item
-                (these columns rarely land on a whole pixel) is what caused a
-                2-3px snap in Firefox specifically at the end of each scale
-                transition, when the layer gets merged back into normal layout. */}
-            <div className="backface-hidden relative h-full w-full transition-transform duration-500 group-hover:scale-105 group-hover:will-change-transform">
-              <Image
-                src={image.url}
-                alt={image.altText ?? title}
-                fill
-                priority={index === 0}
-                quality={50}
-                sizes="33vw"
-                className={`object-cover transition-opacity duration-500 ${
-                  desktopAllLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-                onLoad={() => setDesktopLoadedCount((count) => count + 1)}
-              />
-            </div>
+            {/* No will-change/transform-gpu here on purpose — ListingCarouselCard
+                uses this exact same plain-transition hover-zoom with neither, and
+                is the only one of the three image components with no Firefox
+                jank. Both GPU-promotion hints turned out to be the actual cause
+                of a 2-3px snap at the end of each transition (visible only in
+                Firefox), not a fix for it — a plain `transition-transform`
+                doesn't force Firefox to merge a promoted layer back into layout
+                on a fractional-width flex item. */}
+            <Image
+              src={image.url}
+              alt={image.altText ?? title}
+              fill
+              priority={index === 0}
+              quality={50}
+              sizes="33vw"
+              className={`object-cover transition-[opacity,scale] duration-500 group-hover:scale-105 ${
+                desktopAllLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setDesktopLoadedCount((count) => count + 1)}
+            />
           </button>
         ))}
       </div>
