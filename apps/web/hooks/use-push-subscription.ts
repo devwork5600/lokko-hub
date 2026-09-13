@@ -55,8 +55,19 @@ export function usePushSubscription() {
       applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
     });
 
-    // Piece 5 wires this up to an API route that saves it to PushSubscription.
-    console.log('Push subscription created:', subscription.toJSON());
+    // The browser subscription itself already succeeded at this point — a
+    // failure here only means the server doesn't know about it yet (no
+    // pushes will reach this device until a retry succeeds), so we still
+    // report 'subscribed' rather than rolling the UI back to an error state.
+    try {
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(subscription.toJSON()),
+      });
+    } catch (err) {
+      console.error('Failed to save push subscription:', err);
+    }
 
     setStatus('subscribed');
   };
