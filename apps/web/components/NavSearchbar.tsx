@@ -22,6 +22,18 @@ function buildHref(suggestion: Pick<SearchSuggestion, 'query' | 'category' | 'su
   return qs ? `/listings?${qs}` : '/listings';
 }
 
+// Context trail shown under a structured match so it's clear where it sits
+// in the taxonomy — e.g. a product shows "Épicerie › Confitures" beneath its
+// name. A bare category match needs no trail; it already is the top level.
+function buildTrail(suggestion: SearchSuggestion): string | null {
+  if (suggestion.from === 'subCategory') return suggestion.categoryName ?? null;
+  if (suggestion.from === 'product') {
+    if (suggestion.subCategoryName) return `${suggestion.categoryName} › ${suggestion.subCategoryName}`;
+    return suggestion.categoryName ?? null;
+  }
+  return null;
+}
+
 export function NavSearchbar({
   className,
   inputClassName,
@@ -177,20 +189,24 @@ export function NavSearchbar({
                 <p className="px-3 py-2 text-sm text-muted-foreground">Aucun résultat</p>
               ) : (
                 <ul>
-                  {displayedSuggestions.map((suggestion, index) => (
-                    <li key={`${suggestion.from}-${suggestion.label}`}>
-                      <button
-                        type="button"
-                        onMouseDown={() => navigateTo(suggestion)}
-                        className={cn(
-                          'block w-full px-3 py-2 text-left text-sm text-foreground hover:bg-muted',
-                          activeIndex === index && 'bg-muted',
-                        )}
-                      >
-                        {suggestion.label}
-                      </button>
-                    </li>
-                  ))}
+                  {displayedSuggestions.map((suggestion, index) => {
+                    const trail = buildTrail(suggestion);
+                    return (
+                      <li key={`${suggestion.from}-${suggestion.label}`}>
+                        <button
+                          type="button"
+                          onMouseDown={() => navigateTo(suggestion)}
+                          className={cn(
+                            'block w-full px-3 py-2 text-left hover:bg-muted',
+                            activeIndex === index && 'bg-muted',
+                          )}
+                        >
+                          <span className="block text-sm text-foreground">{suggestion.label}</span>
+                          {trail && <span className="block text-xs text-muted-foreground">{trail}</span>}
+                        </button>
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>

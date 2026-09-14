@@ -11,11 +11,14 @@ export type SearchSuggestion = {
   subCategoryName?: string;
   product?: string;
   productName?: string;
-  from: 'title' | 'product' | 'category';
+  from: 'title' | 'product' | 'subCategory' | 'category';
 };
 
+// Kept in sync with NavSearchbar's MAX_SUGGESTIONS — structured matches
+// (category/subCategory/product) always win over free-text listing titles;
+// titles only fill in whatever's left once structured options run out.
+const DISPLAY_LIMIT = 3;
 const ROUTE_LIMIT = 10;
-const TITLE_FALLBACK_THRESHOLD = 3;
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get('q')?.trim();
@@ -23,13 +26,50 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ suggestions: [] });
   }
 
+  // Ordered broadest-to-narrowest — category, then subcategory, then
+  // product — so the list always reads generic-first, most-targeted-last.
+  const [categories, subCategories, products] = await Promise.all([
+    prisma.category.findMany({
+      where: { name: { contains: q, mode: 'insensitive' }, parentId: null },
+      orderBy: { name: 'asc' },
+      take: ROUTE_LIMIT,
+    }),
+    prisma.category.findMany({
+      where: { name: { contains: q, mode: 'insensitive' }, parentId: { not: null } },
+      include: { parent: true },
+      orderBy: { name: 'asc' },
+      take: ROUTE_LIMIT,
+    }),
+    prisma.product.findMany({
+      where: { name: { contains: q, mode: 'insensitive' }, isActive: true },
+      include: { category: { include: { parent: true } } },
+      orderBy: { name: 'asc' },
+      take: ROUTE_LIMIT,
+    }),
+  ]);
+
   const suggestions: SearchSuggestion[] = [];
 
-  const products = await prisma.product.findMany({
-    where: { name: { contains: q, mode: 'insensitive' }, isActive: true },
-    include: { category: { include: { parent: true } } },
-    take: ROUTE_LIMIT,
-  });
+  for (const category of categories) {
+    suggestions.push({
+      label: category.name,
+      category: category.slug,
+      categoryName: category.name,
+      from: 'category',
+    });
+  }
+
+  for (const sub of subCategories) {
+    if (!sub.parent) continue;
+    suggestions.push({
+      label: sub.name,
+      category: sub.parent.slug,
+      categoryName: sub.parent.name,
+      subCategory: sub.slug,
+      subCategoryName: sub.name,
+      from: 'subCategory',
+    });
+  }
 
   for (const product of products) {
     const subCategory = product.category;
@@ -38,60 +78,26 @@ export async function GET(req: NextRequest) {
       label: product.name,
       product: product.slug,
       productName: product.name,
-      ...(subCategory.parentId
-        ? { subCategory: subCategory.slug, subCategoryName: subCategory.name }
-        : {}),
+      ...(subCategory.parentId ? { subCategory: subCategory.slug, subCategoryName: subCategory.name } : {}),
       category: topCategory.slug,
       categoryName: topCategory.name,
       from: 'product',
     });
   }
 
-  if (suggestions.length < ROUTE_LIMIT) {
-    const categories = await prisma.category.findMany({
-      where: { name: { contains: q, mode: 'insensitive' } },
-      include: { parent: true },
-      take: ROUTE_LIMIT - suggestions.length,
-    });
-
-    for (const category of categories) {
-      if (category.parentId && category.parent) {
-        suggestions.push({
-          label: category.name,
-          category: category.parent.slug,
-          categoryName: category.parent.name,
-          subCategory: category.slug,
-          subCategoryName: category.name,
-          from: 'category',
-        });
-      } else {
-        suggestions.push({
-          label: category.name,
-          category: category.slug,
-          categoryName: category.name,
-          from: 'category',
-        });
-      }
-    }
-  }
-
-  if (suggestions.length < TITLE_FALLBACK_THRESHOLD) {
+  // Free-text fallback: only once every structured option (category,
+  // subcategory, product) is exhausted, never displaces one.
+  if (suggestions.length < DISPLAY_LIMIT) {
     const listings = await prisma.listing.findMany({
       where: { title: { contains: q, mode: 'insensitive' }, status: 'ACTIVE', deletedAt: null },
       distinct: ['title'],
-      take: TITLE_FALLBACK_THRESHOLD - suggestions.length,
+      take: DISPLAY_LIMIT - suggestions.length,
       orderBy: { createdAt: 'desc' },
-      select: {
-        title: true,
-      },
+      select: { title: true },
     });
 
     for (const listing of listings) {
-      suggestions.push({
-        label: listing.title,
-        query: listing.title,
-        from: 'title',
-      });
+      suggestions.push({ label: listing.title, query: listing.title, from: 'title' });
     }
   }
 
