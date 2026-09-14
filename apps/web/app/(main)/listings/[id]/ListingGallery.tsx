@@ -8,9 +8,56 @@ import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { ShareButton } from '@/components/ShareButton';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { useBookmark } from '@/hooks/use-bookmark';
+import { useIntegerSize } from '@/hooks/use-integer-size';
 import { cn } from '@/lib/utils';
 
 type ImageItem = { url: string; altText: string | null };
+
+// A dedicated component (rather than calling useIntegerSize inline in the
+// desktopImages.map() below) so each of the 3 columns gets its own hook
+// instance — calling a hook inside a loop/map body directly would break the
+// Rules of Hooks.
+function DesktopGalleryImage({
+  image,
+  title,
+  index,
+  onClick,
+  loaded,
+  onLoad,
+}: {
+  image: ImageItem;
+  title: string;
+  index: number;
+  onClick: () => void;
+  loaded: boolean;
+  onLoad: () => void;
+}) {
+  const [sizeRef, size] = useIntegerSize<HTMLButtonElement>();
+
+  return (
+    <button
+      ref={sizeRef}
+      type="button"
+      onClick={onClick}
+      style={size ? { width: size.width, height: size.height } : undefined}
+      className="group relative h-full flex-1 cursor-pointer overflow-hidden"
+    >
+      {!loaded && <ImageSkeleton />}
+      <Image
+        src={image.url}
+        alt={image.altText ?? title}
+        fill
+        priority={index === 0}
+        quality={50}
+        sizes="33vw"
+        className={`object-cover transition-[opacity,scale] duration-500 group-hover:scale-105 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={onLoad}
+      />
+    </button>
+  );
+}
 
 export function ListingGallery({
   images,
@@ -53,34 +100,15 @@ export function ListingGallery({
       {/* Desktop: up to 3 images side by side */}
       <div className="relative hidden h-[420px] gap-2 overflow-hidden rounded-xl lg:flex">
         {desktopImages.map((image, index) => (
-          <button
+          <DesktopGalleryImage
             key={image.url}
-            type="button"
+            image={image}
+            title={title}
+            index={index}
             onClick={() => setLightboxIndex(index)}
-            className="group relative h-full flex-1 cursor-pointer overflow-hidden"
-          >
-            {!desktopAllLoaded && <ImageSkeleton />}
-            {/* No will-change/transform-gpu here on purpose — ListingCarouselCard
-                uses this exact same plain-transition hover-zoom with neither, and
-                is the only one of the three image components with no Firefox
-                jank. Both GPU-promotion hints turned out to be the actual cause
-                of a 2-3px snap at the end of each transition (visible only in
-                Firefox), not a fix for it — a plain `transition-transform`
-                doesn't force Firefox to merge a promoted layer back into layout
-                on a fractional-width flex item. */}
-            <Image
-              src={image.url}
-              alt={image.altText ?? title}
-              fill
-              priority={index === 0}
-              quality={50}
-              sizes="33vw"
-              className={`object-cover transition-[opacity,scale] duration-500 group-hover:scale-105 ${
-                desktopAllLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => setDesktopLoadedCount((count) => count + 1)}
-            />
-          </button>
+            loaded={desktopAllLoaded}
+            onLoad={() => setDesktopLoadedCount((count) => count + 1)}
+          />
         ))}
       </div>
 
