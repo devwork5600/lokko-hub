@@ -7,12 +7,14 @@ import { useRef, useState } from 'react';
 import type { ListingCard as ListingCardType } from '@/actions/listing-actions';
 import { ImageSkeleton } from '@/components/ImageSkeleton';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIntegerSize } from '@/hooks/use-integer-size';
 import { preloadListingImages } from '@/lib/preload-listing-images';
 
 export function SearchCard({ listing }: { listing: ListingCardType }) {
   const image = listing.images[0];
   const hasPreloaded = useRef(false);
   const [loaded, setLoaded] = useState(false);
+  const [sizeRef, size] = useIntegerSize<HTMLDivElement>();
 
   function handlePreload() {
     if (hasPreloaded.current) return;
@@ -27,7 +29,11 @@ export function SearchCard({ listing }: { listing: ListingCardType }) {
       onTouchStart={handlePreload}
       className="group block overflow-hidden rounded-xl border border-border shadow-sm transition-shadow hover:shadow-md"
     >
-      <div className="relative aspect-4/5 w-full overflow-hidden bg-muted">
+      <div
+        ref={sizeRef}
+        style={size ? { width: size.width, height: size.height } : undefined}
+        className="relative aspect-4/5 w-full overflow-hidden bg-muted"
+      >
         {image ? (
           <>
             {!loaded && <ImageSkeleton />}
