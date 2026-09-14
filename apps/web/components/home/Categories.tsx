@@ -49,7 +49,7 @@ export function Categories({ categories }: { categories: Category[] }) {
           onMouseEnter={() => timeoutRef.current && clearTimeout(timeoutRef.current)}
           onMouseLeave={handleLeave}
         >
-          <div className="flex w-56 flex-col justify-between bg-secondary p-4 font-medium capitalize dark:bg-secondary-foreground">
+          <div className="flex w-56 flex-col justify-between bg-secondary p-4 font-medium text-secondary-foreground capitalize">
             {activeCategory.name}
             <Link
               href={`/listings?category=${activeCategory.slug}`}
