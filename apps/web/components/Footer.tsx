@@ -60,7 +60,11 @@ export function Footer() {
         <div>
           <h3 className="mb-2 text-sm font-semibold text-foreground">Suivre Lokko Hub</h3>
           <p className="mb-4 text-sm">Les nouveautés locales près de chez toi.</p>
-          <form onSubmit={handleSubmit(onNewsletterSubmit)} noValidate className="flex flex-col gap-2">
+          <form
+            onSubmit={handleSubmit(onNewsletterSubmit)}
+            noValidate
+            className="flex flex-col gap-2"
+          >
             <input
               type="email"
               {...register('email')}
@@ -109,6 +113,9 @@ export function Footer() {
           </Link>
           <Link href="/cookies" className="transition-colors hover:text-primary">
             Cookies
+          </Link>
+          <Link href="/mentions-legales" className="transition-colors hover:text-primary">
+            Mentions légales
           </Link>
         </div>
       </div>
