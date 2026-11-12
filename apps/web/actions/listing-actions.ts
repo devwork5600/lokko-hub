@@ -3,12 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 
-import { prisma, Prisma } from '@lokko-hub/db';
+import { findSimilarListingIds, prisma, Prisma } from '@lokko-hub/db';
 import { listingSchema, type ListingDraft } from '@lokko-hub/validations';
 
 import { getUser } from '@/lib/auth/auth-session';
 import { notifyListingStatusChange } from '@/lib/notify-listing-status';
-import { getListingQueue } from '@/lib/queue';
+import { getEmbeddingQueue, getListingQueue } from '@/lib/queue';
 
 const listingCardSelect = {
   id: true,
@@ -168,6 +168,24 @@ export async function getListingById(id: string) {
 
 export type ListingDetail = NonNullable<Awaited<ReturnType<typeof getListingById>>>;
 
+// Semantic "similar listings": ranks by cosine distance on title+description
+// embeddings (see packages/db's findSimilarListingIds), then hydrates with the
+// same card shape as the rest of the browse/home UI. Returns [] rather than
+// throwing when the listing has no embedding yet (e.g. worker hasn't processed
+// it) — findSimilarListingIds already filters those out.
+export async function getSimilarListings(listingId: string, limit = 8): Promise<ListingCard[]> {
+  const matches = await findSimilarListingIds(listingId, limit);
+  if (matches.length === 0) return [];
+
+  const listings = await prisma.listing.findMany({
+    where: { id: { in: matches.map((m) => m.id) }, status: 'ACTIVE', deletedAt: null },
+    select: listingCardSelect,
+  });
+  const byId = new Map(listings.map((l) => [l.id, l]));
+
+  return matches.map((m) => byId.get(m.id)).filter((l): l is ListingCard => l != null);
+}
+
 const userListingCardSelect = {
   ...listingCardSelect,
   status: true,
@@ -322,6 +340,14 @@ export async function createListing(data: ListingDraft): Promise<ListingActionRe
     console.error('Failed to enqueue moderation job:', err);
   }
 
+  try {
+    await getEmbeddingQueue().add('embedding-job', { listingId: listing.id });
+  } catch (err) {
+    // Same story: the listing exists without a suggestion-ready embedding
+    // until someone retries, but the request itself still succeeds.
+    console.error('Failed to enqueue embedding job:', err);
+  }
+
   return { success: true, listingId: listing.id };
 }
 
@@ -334,7 +360,7 @@ export async function updateListing(
 
   const existing = await prisma.listing.findUnique({
     where: { id: listingId },
-    select: { ownerId: true },
+    select: { ownerId: true, title: true, description: true },
   });
   if (!existing) return { success: false, error: 'Listing not found' };
   if (existing.ownerId !== user.id) return { success: false, error: 'Forbidden' };
@@ -410,6 +436,18 @@ export async function updateListing(
       });
     } catch (err) {
       console.error('Failed to enqueue re-moderation job:', err);
+    }
+  }
+
+  // Independent of imagesChanged: the embedding only depends on title/description,
+  // so an image-only edit shouldn't recompute it, and a text-only edit (which never
+  // touches moderation status above) still needs its embedding refreshed.
+  const textChanged = existing.title !== title || existing.description !== description;
+  if (textChanged) {
+    try {
+      await getEmbeddingQueue().add('embedding-job', { listingId });
+    } catch (err) {
+      console.error('Failed to enqueue embedding job:', err);
     }
   }
 

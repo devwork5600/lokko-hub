@@ -2,7 +2,10 @@ import { Queue } from 'bullmq';
 
 import { getRedis } from './redis';
 
-const globalForQueue = globalThis as unknown as { listingQueue: Queue | undefined };
+const globalForQueue = globalThis as unknown as {
+  listingQueue: Queue | undefined;
+  embeddingQueue: Queue | undefined;
+};
 
 export function getListingQueue() {
   if (!globalForQueue.listingQueue) {
@@ -11,4 +14,11 @@ export function getListingQueue() {
     globalForQueue.listingQueue = new Queue('lokko-hub-listing-queue', { connection: getRedis() });
   }
   return globalForQueue.listingQueue;
+}
+
+export function getEmbeddingQueue() {
+  if (!globalForQueue.embeddingQueue) {
+    globalForQueue.embeddingQueue = new Queue('lokko-hub-embedding-queue', { connection: getRedis() });
+  }
+  return globalForQueue.embeddingQueue;
 }

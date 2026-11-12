@@ -1,5 +1,6 @@
 import 'dotenv/config';
 
+import { startEmbeddingWorker } from './embeddings';
 import { startModerationWorker } from './moderation';
 import { createHealthServer } from './server';
 
@@ -11,3 +12,6 @@ createHealthServer().listen(PORT, '0.0.0.0', () => {
 
 startModerationWorker();
 console.log('[worker] moderation worker started');
+
+startEmbeddingWorker();
+console.log('[worker] embedding worker started');
