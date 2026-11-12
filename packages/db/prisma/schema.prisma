@@ -5,7 +5,7 @@ generator client {
 
 datasource db {
   provider   = "postgresql"
-  extensions = [postgis]
+  extensions = [postgis, vector]
 }
 
 //
@@ -189,6 +189,12 @@ model Listing {
 
   archivedAt DateTime?
   deletedAt  DateTime?
+
+  // Semantic embedding of title + description, used for "similar listings"
+  // suggestions. 384 dims matches paraphrase-multilingual-MiniLM-L12-v2 (see
+  // apps/worker/src/embeddings.ts) — Prisma can't model the `vector` type, so
+  // it's read/written via $queryRaw / $executeRaw only (see packages/db/prisma/sql).
+  embedding Unsupported("vector(384)")?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

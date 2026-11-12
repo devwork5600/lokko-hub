@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
-import { getListingById, isBookmarked } from '@/actions/listing-actions';
+import { getListingById, getSimilarListings, isBookmarked } from '@/actions/listing-actions';
 import { LeafletMap } from '@/components/LeafletMapClient';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { ListingsSection } from '@/components/home/ListingsSection';
 import { getUser } from '@/lib/auth/auth-session';
 
 import { ListingGallery } from './ListingGallery';
@@ -61,7 +62,11 @@ export default async function ListingDetailPage({
   const listing = await getListingById(id);
   if (!listing) notFound();
 
-  const [user, initialBookmarked] = await Promise.all([getUser(), isBookmarked(id)]);
+  const [user, initialBookmarked, similarListings] = await Promise.all([
+    getUser(),
+    isBookmarked(id),
+    getSimilarListings(id),
+  ]);
   const isOwner = user?.id === listing.ownerId;
 
   return (
@@ -168,6 +173,12 @@ export default async function ListingDetailPage({
           <SellerCard owner={listing.owner} listingId={listing.id} isOwner={isOwner} isSignedIn={!!user} />
         </div>
       </div>
+
+      <ListingsSection
+        title="Annonces similaires"
+        listings={similarListings}
+        href={categoryHref({ category: listing.category.slug })}
+      />
     </main>
   );
 }

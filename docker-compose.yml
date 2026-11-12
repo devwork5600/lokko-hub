@@ -1,0 +1,25 @@
+services:
+  postgres:
+    build: ./docker/postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: lokko
+      POSTGRES_PASSWORD: lokko
+      POSTGRES_DB: lokko_hub
+    ports:
+      - '5432:5432'
+    volumes:
+      - lokko_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U lokko -d lokko_hub']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # No redis service here: a redis-server is already running on the host at
+  # 127.0.0.1:6379 (system service) — point UPSTASH_REDIS_URL at that instead
+  # of starting a second one (which would just fight over the port). Use a
+  # non-default db index (redis://127.0.0.1:6379/1) to stay out of its data.
+
+volumes:
+  lokko_pgdata:
