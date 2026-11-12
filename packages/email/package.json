@@ -16,7 +16,7 @@
   "dependencies": {
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-email": "^6.11.7",
+    "react-email": "^6.11.11",
     "resend": "^6.37.0"
   },
   "devDependencies": {
